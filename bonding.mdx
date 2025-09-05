@@ -1,0 +1,47 @@
+---
+title: 'Bonding Curve'
+description: 'Our bonding curve ensures perpetual liquidity'
+---
+
+## Bonding curve mechanism
+
+PNP Exchange uses a Pythagorean bonding curve to price decision tokens automatically.
+At its core, it eliminates the need for traditional market makers by providing algorithmic liquidity.
+It breaks down barriers that plague prediction markets by ensuring there's always an opportunity to buy or sell tokens.
+While traditional prediction markets depend on external liquidity providers, PNP Exchange creates liquidity through mathematical certainty.
+The price discovery expressed through our bonding curve adjusts automatically based on token supply, creating fair and transparent markets.
+PNP Exchange removes liquidity risk by guaranteeing that every market has built-in price mechanisms from day one.
+If liquidity is the lifeblood of markets, then bonding curves are the heart.
+Creating markets is simple, but ensuring liquidity is critical.
+
+
+## PNP Exchange makes liquidity mathematical.
+
+<Frame>
+  <img src="/images/SS2.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+
+### The Pythagorean Formula
+
+The total reserve calculation follows this formula:
+
+
+Where:
+- `r` is the total reserve (capital) invested in the prediction market
+- `s_yes`, `s_no`, `s_draw` are the supplies of YES, NO, and DRAW tokens respectively
+- `c` is a coefficient that starts at 1 and gradually grows to account for accrued fees
+
+### How it works
+
+- Automatic Pricing: Token prices adjust automatically based on supply changes. When more people buy YES tokens, the price of YES increases while NO decreases.
+- Guaranteed Liquidity: The bonding curve ensures liquidity is always available. No waiting for counterparties or market makers.
+- Risk-Free Liquidity Provision: Users can become liquidity providers by buying equal amounts of all outcome tokens, earning fees regardless of the market outcome.
+- Fee Accrual: The coefficient `c` grows over time as trading fees accumulate, increasing the total reserve and benefiting all liquidity providers.
+
+### Benefits
+
+- Unruggable liquidity: Creator's initial liquidity can't be taken out until the market ends
+- Always Tradeable: Every market has guaranteed liquidity from creation
+- Fair Price Discovery: Prices reflect true market sentiment through supply and demand
+- Sustainable Economics: Fee accumulation benefits long-term participants
