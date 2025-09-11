@@ -1,33 +1,51 @@
 ---
 title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+description: 'PNP Exchange API overview and authentication'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## PNP Exchange API
 
-## Welcome
-
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+Build on top of PNP Exchange with a simple, secure REST API for markets, outcomes, trades, and settlements. The full reference is generated from our OpenAPI spec.
 
 <Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
+  title="OpenAPI Specification"
+  icon="terminal"
+  href="/api-reference/openapi.json"
 >
-  View the OpenAPI specification file
+  View the OpenAPI definition used to generate these docs.
 </Card>
 
-## Authentication
+### Base URL
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+```
+https://api.pnp.exchange/v1
+```
+
+### Authentication
+
+All requests require a Bearer token.
+
+```
+Authorization: Bearer <PNP_API_KEY>
+```
+
+Example:
+
+```bash
+curl -H "Authorization: Bearer $PNP_API_KEY" \
+     -H "Content-Type: application/json" \
+     https://api.pnp.exchange/v1/markets
+```
+
+### Errors
+
+Errors follow RFC 7807-style problem details where possible.
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+{
+  "type": "https://api.pnp.exchange/errors/unauthorized",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Missing or invalid API key"
+}
 ```

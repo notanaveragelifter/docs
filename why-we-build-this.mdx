@@ -1,0 +1,52 @@
+---
+title: "Why we build this"
+description: "Reimagining the prediction market lifecycle: creation → trading → settlement"
+---
+
+## Why we build this
+
+Prediction markets need a better end‑to‑end stack. We focus on the lifecycle: Market Creation → Market Trading → Market Settlement.
+
+### Market Creation
+
+Today, market creation is largely centralized. Gatekeepers decide what can be listed and when it goes live. We believe the next big unlock is USER-GENERATED-MARKETS—giving the power to launch a prediction market back to the user.
+
+- Permissionless creation for any verifiable question
+- No approval queues or gatekeepers
+- Creator ownership over market parameters and fees
+
+This shifts discovery and innovation to the edges, where the best questions and fastest iteration happen.
+
+### Market Trading
+
+Most exchanges match trades via a centralized order book. We use a bonding curve so any prediction market can clear trades continuously without an order book.
+
+- Continuous pricing via supply-sensitive curves
+- Instant buy/sell for any outcome at any time
+- No reliance on market makers or order depth
+
+Bonding curves make trading mechanical and predictable, so markets remain usable from the first transaction. See more in our Bonding Curve overview.
+
+### Market Settlement
+
+Status quo: current exchanges either settle markets themselves or outsource to dispute-vote oracles like UMA. We’ve seen high‑profile disputes and whale influence shape outcomes, undermining trust in neutrality. For example, CoinDesk reported on a Zelenskyy “suit” market controversy where incentives and token concentration drove resolution dynamics rather than facts.
+
+- Reference: [“‘This Isn’t Decentralized,’ Says Polymarket Power User…” (CoinDesk)](https://www.coindesk.com/markets/2025/07/09/this-isnt-decentralized-says-polymarket-power-user-as-zelenskyys-suit-controversy-unfolds)
+
+Our approach: settle markets with sophisticated real‑time LLM models—no third party dispute vote. Models evaluate structured evidence (on‑chain parameters, price feeds, and curated off‑chain data like tweets or articles) and produce deterministic YES/NO outcomes that anyone can verify and submit on-chain.
+
+- No token‑weighted voting or whale capture
+- Programmatic evidence collection and evaluation
+- Permissionless settlement calls after deadlines
+
+### A Composable, Open Stack
+
+We envision an open future powered by information finance. That requires the entire prediction market stack to be composable:
+
+- Market creation as a primitive (USER-GENERATED-MARKETS)
+- Trading as a curve‑based liquidity primitive
+- Settlement as an evidence‑driven, model‑verifiable primitive
+
+On top of these, several derivatives can be built—options on probabilities, perpetuals on outcome deltas, structured payouts, and baskets of markets—allowing anyone to create higher‑order products and strategies.
+
+PNP Exchange is building this composable stack so prediction markets become universal infrastructure for pricing information.

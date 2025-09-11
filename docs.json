@@ -16,7 +16,9 @@
           {
             "group": "Getting started",
             "pages": [
-              "index"
+              "index",
+              "why-we-build-this",
+              "core-features"
             ]
           },
           {
