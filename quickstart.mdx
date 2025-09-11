@@ -1,53 +1,71 @@
 ---
-title: "Oracle functionning"
-description: "Our oracle system is built for permissionless settlement"
+title: "Oracle"
+description: "LLM‑assisted oracle for prediction markets"
 ---
 
+## Oracle Overview
 
-## Oracle functionning
+A pragmatic, LLM‑assisted oracle that settles prediction markets with verifiable, time‑bounded evidence. It blends multiple AI providers with a strict settlement rubric, and commits outcomes on‑chain when decisive—or safely triggers refunds when ambiguity remains.
 
-Our oracle system is built for permissionless settlement
-PNP Exchange categorizes prediction markets by how they settle their outcomes.
-At its core, it separates markets into two distinct types: Price Markets and Twitter Markets.
-It eliminates third-party dependencies by implementing specialized settlement modules for each market type.
-While traditional prediction markets rely on external optimistic providers, PNP Exchange settles outcomes through programmatic on-chain logic and AI-powered analysis.
-The settlement mechanism expressed through our dual approach ensures accurate outcomes while maintaining decentralization and preventing manipulation.
-PNP Exchange removes bottlenecks by automating settlement processes through smart contracts and off-chain AI models.
-If settlement is the backbone of prediction markets, then automation is its strength.
-Creating trust is complex, but executing settlement should be simple.
-PNP Exchange makes oracles work autonomously.
+- **What it does**: Decides YES/NO market outcomes or identifies non‑resolvable/ambiguous cases.
+- **How it thinks**: Evidence‑first prompts that check listed sources, extract specific numbers, and compute thresholds explicitly—minimizing “vibes” answers.
+- **Where it runs**: Backs market platforms with an API layer and a Solana settlement module.
+ - **Providers**: Uses Perplexity and Grok 4 for real‑time, wide‑coverage retrieval. Their unbiased, up‑to‑date context makes this oracle perfectly suited for prediction markets.
 
-### Market types
+## Two‑Step Workflow
 
-#### Price Markets
-Markets that settle based on token price data.
+### 1) Criteria generation (filtering and clarity)
+After market creation, the oracle generates or validates market‑specific settlement criteria before the market can be made tradeable :
+- **Resolvability gate**: Confirms whether the question is objectively answerable by the deadline.
+- **Authoritative sources**: Builds a concise list of official or governing‑body sources to check later.
+- **Objective rubric**: Clarifies exact metrics (scores, counts, prices, timestamps) and how to compute the outcome.
+- **Token/coin markets**: For coin markets, criteria incorporate token‑specific context and data pathways without exposing internal data methods.
 
-Settlement process:
-- Target price and deadline stored on-chain during creation
-- Settlement module fetches market parameters automatically
-- Current price retrieved from high-liquidity on-chain pools
-- Winning outcome determined by price comparison
-- No human intervention required
+Result: Markets flagged as non‑resolvable are safely filtered (and can be routed to refund paths). Resolvable markets move to step 2.
 
-Example: "Will BTC reach $85k by end of January?"
+### 2) Settlement (decision and on‑chain finalization)
+At/after market end:
+- **Time‑bounded evidence**: AI providers are restricted to information available up to the market’s deadline.
+- **Source‑checking**: The oracle checks the pre‑listed resolution sources first. It extracts the numbers/facts that resolve the question.
+- **Explicit computation**: Shows the math or threshold logic (e.g., totals, comparisons), then decides YES/NO—or returns ambiguous only if truly unverifiable.
+- **Consensus mode (optional)**: Multiple providers can be queried; if they agree, we finalize with higher confidence. If they conflict, we prefer authoritative sources and fall back safely.
+- **Finalization**: When decisive, the on‑chain module commits the result; when ambiguous/non‑resolvable, a dispute path is enabled.
 
-#### Twitter and Question Markets
-Markets that settle based on social media data and real-world events.
+## Why This Oracle Gets Markets Right
 
-Settlement Process:
-- Market question, trusted Twitter username, and deadline stored on-chain
-- Anyone can call initSettlement(conditionId) after deadline
-- AI model analyzes tweets from specified trusted source
-- Structured prompt combines market question with tweet data
-- Model outputs definitive "YES" or "NO" response
-- Result submitted on-chain to settle market
+Purpose‑built for prediction markets where clarity, deadlines, and fairness matter most.
 
-Example: "Will Vitalik appear on Joe Rogan's podcast by January 2025?"
+- **Evidence‑first prompting**: Requires checking the listed sources, extracting exact values, and doing the calculation explicitly—not just summarizing news.
+- **Time‑bounded lookups**: Date filters prevent leakage from after‑deadline information.
+- **Authoritative‑source precedence**: Official databases and governing bodies outrank general reporting. Conflicts use a clear precedence policy.
+- **Deterministic rubric**: Criteria define what counts, how to count it, and how to compare it—before any decision is made.
+- **Multi‑provider optionality**: Uses multiple AI providers and can require agreement to reduce single‑model bias.
 
-### Token System
-All market outcomes are minted as ERC1155 tokens with unique IDs:
-- YES tokens: keccak256(conditionId + "YES")
-- NO tokens: keccak256(conditionId + "NO") 
+## Operational Flow
 
-### Future Development
-We're building a decentralized network of operators running settlement models with BLS-signed responses backed by staked value, further enhancing security and decentralization.
+- **Before end time**
+  - Run criteria generation for a batch of markets.
+  - Mark resolvable vs. non‑resolvable and store resolution sources.
+- **At/after end time**
+  - Execute settlement analysis with time‑bounded evidence.
+  - If decisive, finalize on‑chain; otherwise, enable refunds.
+- **Admin safety**
+  - Sensitive write actions are gated; emergency refund flows are supported.
+  - Many test endpoints are disabled in production.
+
+## Non‑Technical Pitch
+
+- **Fair and transparent**: Decisions cite sources and show the arithmetic behind the outcome.
+- **Deadline‑honoring**: Uses information available before the market closes—no hindsight bias.
+- **Robust and pragmatic**: Human‑like reasoning that behaves like a careful adjudicator, not a chatbot.
+- **Multi‑model resilience**: Optional consensus reduces brittleness; disagreements trigger safe fallbacks.
+- **On‑chain finality with safety nets**: When clear, we settle; when unclear, refunds are enabled fast.
+
+## Oracle Roadmap
+
+- Ongoing upgrades to criteria templates, source‑precedence policies, and time‑bounded retrieval.
+- Expanding support for more market types: token/coin price markets, sports, politics, social/media events, on‑chain protocol events, and custom rubric‑defined questions.
+- Deeper integration with Perplexity and Grok 4, plus additional MCP connectors for domain‑specific evidence.
+- Path to decentralization: optional operator network reaching consensus prior to finalization.
+
+
