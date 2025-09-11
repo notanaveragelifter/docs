@@ -16,18 +16,16 @@
           {
             "group": "Getting started",
             "pages": [
-              "index",
-              "quickstart",
-              "development",
-              "tokenomic",
-              "bonding"
+              "index"
             ]
           },
           {
             "group": "Customization",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+             "quickstart",
+              "development",
+              "tokenomic",
+              "bonding"
             ]
           },
           {
