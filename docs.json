@@ -42,10 +42,10 @@
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "SDK reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "SDK",
             "pages": [
               "api-reference/introduction"
             ]

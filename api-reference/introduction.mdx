@@ -1,51 +1,15 @@
 ---
-title: 'Introduction'
-description: 'PNP Exchange API overview and authentication'
+title: 'PNP SDK'
+description: 'Coming soon'
 ---
 
-## PNP Exchange API
+## PNP SDK
 
-Build on top of PNP Exchange with a simple, secure REST API for markets, outcomes, trades, and settlements. The full reference is generated from our OpenAPI spec.
+Coming soon.
 
-<Card
-  title="OpenAPI Specification"
-  icon="terminal"
-  href="/api-reference/openapi.json"
->
-  View the OpenAPI definition used to generate these docs.
-</Card>
+We’re releasing a lightweight SDK that lets users and AI agents create prediction markets in a few lines of code.
 
-### Base URL
-
-```
-https://api.pnp.exchange/v1
-```
-
-### Authentication
-
-All requests require a Bearer token.
-
-```
-Authorization: Bearer <PNP_API_KEY>
-```
-
-Example:
-
-```bash
-curl -H "Authorization: Bearer $PNP_API_KEY" \
-     -H "Content-Type: application/json" \
-     https://api.pnp.exchange/v1/markets
-```
-
-### Errors
-
-Errors follow RFC 7807-style problem details where possible.
-
-```json
-{
-  "type": "https://api.pnp.exchange/errors/unauthorized",
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "Missing or invalid API key"
-}
-```
+Benefits:
+- Simple primitives for market creation, trading, and settlement
+- Safe defaults with clear, typed params
+- Works with server apps and agent runtimes
