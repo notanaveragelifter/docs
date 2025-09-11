@@ -20,7 +20,7 @@
             ]
           },
           {
-            "group": "Customization",
+            "group": "PNP architecture",
             "pages": [
              "quickstart",
               "development",
