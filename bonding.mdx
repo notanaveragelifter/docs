@@ -5,14 +5,9 @@ description: 'Our bonding curve ensures perpetual liquidity'
 
 ## Bonding curve mechanism
 
-PNP Exchange uses a Pythagorean bonding curve to price decision tokens automatically.
-At its core, it eliminates the need for traditional market makers by providing algorithmic liquidity.
-It breaks down barriers that plague prediction markets by ensuring there's always an opportunity to buy or sell tokens.
-While traditional prediction markets depend on external liquidity providers, PNP Exchange creates liquidity through mathematical certainty.
-The price discovery expressed through our bonding curve adjusts automatically based on token supply, creating fair and transparent markets.
-PNP Exchange removes liquidity risk by guaranteeing that every market has built-in price mechanisms from day one.
-If liquidity is the lifeblood of markets, then bonding curves are the heart.
-Creating markets is simple, but ensuring liquidity is critical.
+PNP Exchange prices outcome tokens with a Pythagorean bonding curve—an on‑chain AMM that provides continuous liquidity from the first trade.
+Prices adjust smoothly with supply, so users can buy or sell without a traditional order book.
+Liquidity is built in, not borrowed from external market makers. We are also exploring delta‑neutral LP strategies to make providing liquidity safer.
 
 
 ## PNP Exchange makes liquidity mathematical.
@@ -32,16 +27,23 @@ Where:
 - `s_yes`, `s_no`, `s_draw` are the supplies of YES, NO, and DRAW tokens respectively
 - `c` is a coefficient that starts at 1 and gradually grows to account for accrued fees
 
+We use a modified version of the pythagorean bonding curve with the constraint that Price(yes)^2 + Price(no)^2 == 1 
+
 ### How it works
 
-- Automatic Pricing: Token prices adjust automatically based on supply changes. When more people buy YES tokens, the price of YES increases while NO decreases.
-- Guaranteed Liquidity: The bonding curve ensures liquidity is always available. No waiting for counterparties or market makers.
-- Risk-Free Liquidity Provision: Users can become liquidity providers by buying equal amounts of all outcome tokens, earning fees regardless of the market outcome.
-- Fee Accrual: The coefficient `c` grows over time as trading fees accumulate, increasing the total reserve and benefiting all liquidity providers.
+- Automatic pricing: Token prices adjust based on supply changes. More YES buys push YES up and NO down.
+- Genesis liquidity: When a market is created with initial liquidity X, the creator receives equal amounts of YES and NO backed by reserve X.
+
+## Why bonding curves power UGC markets
+
+Bonding curves are a cornerstone of DeFi engineering. They turn market making into code and keep markets usable from day one.
+We’re doubling down on advanced AMM design so USER-GENERATED-MARKETS can launch instantly, stay liquid, and scale to any niche.
 
 ### Benefits
 
-- Unruggable liquidity: Creator's initial liquidity can't be taken out until the market ends
-- Always Tradeable: Every market has guaranteed liquidity from creation
-- Fair Price Discovery: Prices reflect true market sentiment through supply and demand
-- Sustainable Economics: Fee accumulation benefits long-term participants
+- Fair price discovery: Prices reflect real demand and supply
+- Sustainable economics: Trading fees accrue to the reserve and long‑term LPs
+
+### Further reading
+
+- Background on bonding‑curve prediction markets and the Pythagorean approach: [Introducing Prophet — Prediction Markets Based On Bonding Curves](https://blog.obyte.org/introducing-prophet-prediction-markets-based-on-bonding-curves-3716651db344)
