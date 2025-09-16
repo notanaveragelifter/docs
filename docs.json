@@ -75,7 +75,8 @@
   },
   "logo": {
     "light": "/logo/logo1.jpg",
-    "dark": "/logo/logo1.jpg"
+    "dark": "/logo/logo1.jpg",
+    "href": "https://pnp.exchange/"
   },
   "navbar": {
     "links": [
