@@ -46,17 +46,6 @@
             ]
           }
         ]
-      },
-      {
-        "tab": "SDK reference",
-        "groups": [
-          {
-            "group": "SDK",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          }
-        ]
       }
     ],
     "global": {
