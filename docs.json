@@ -23,6 +23,12 @@
             ]
           },
           {
+            "group": "Markets Supported",
+            "pages": [
+              "youtube"
+            ]
+          },
+          {
             "group": "PNP architecture",
             "pages": [
              "quickstart",
