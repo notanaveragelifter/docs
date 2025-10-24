@@ -1,71 +1,145 @@
 ---
-title: "Oracle"
-description: "LLM‑assisted oracle for prediction markets"
+title: "Oracle System"
+description: "LLM-assisted oracle architecture for prediction market settlement"
 ---
 
-## Oracle Overview
+## Oracle Architecture
 
-A pragmatic, LLM‑assisted oracle that settles prediction markets with verifiable, time‑bounded evidence. It blends multiple AI providers with a strict settlement rubric, and commits outcomes on‑chain when decisive—or safely triggers refunds when ambiguity remains.
+The PNP Exchange oracle system is a decentralized settlement mechanism that uses large language models (LLMs) to evaluate structured evidence and determine market outcomes. The system is designed to provide transparent, verifiable, and time-bounded settlement for prediction markets.
 
-- **What it does**: Decides YES/NO market outcomes or identifies non‑resolvable/ambiguous cases.
-- **How it thinks**: Evidence‑first prompts that check listed sources, extract specific numbers, and compute thresholds explicitly—minimizing “vibes” answers.
-- **Where it runs**: Backs market platforms with an API layer and a Solana settlement module.
- - **Providers**: Uses Perplexity and Grok 4 for real‑time, wide‑coverage retrieval. Their unbiased, up‑to‑date context makes this oracle perfectly suited for prediction markets.
+### Core Components
 
-## Two‑Step Workflow
+**LLM Providers**: Integration with Perplexity and Grok 4 for real-time, wide-coverage information retrieval and analysis.
 
-### 1) Criteria generation (filtering and clarity)
-After market creation, the oracle generates or validates market‑specific settlement criteria before the market can be made tradeable :
-- **Resolvability gate**: Confirms whether the question is objectively answerable by the deadline.
-- **Authoritative sources**: Builds a concise list of official or governing‑body sources to check later.
-- **Objective rubric**: Clarifies exact metrics (scores, counts, prices, timestamps) and how to compute the outcome.
-- **Token/coin markets**: For coin markets, criteria incorporate token‑specific context and data pathways without exposing internal data methods.
+**Evidence Evaluation Engine**: Structured prompting system that requires explicit source checking, data extraction, and threshold computation.
 
-Result: Markets flagged as non‑resolvable are safely filtered (and can be routed to refund paths). Resolvable markets move to step 2.
+**Time-Bounded Data Collection**: Restricts oracle queries to information available before market deadlines to prevent hindsight bias.
 
-### 2) Settlement (decision and on‑chain finalization)
-At/after market end:
-- **Time‑bounded evidence**: AI providers are restricted to information available up to the market’s deadline.
-- **Source‑checking**: The oracle checks the pre‑listed resolution sources first. It extracts the numbers/facts that resolve the question.
-- **Explicit computation**: Shows the math or threshold logic (e.g., totals, comparisons), then decides YES/NO—or returns ambiguous only if truly unverifiable.
-- **Consensus mode (optional)**: Multiple providers can be queried; if they agree, we finalize with higher confidence. If they conflict, we prefer authoritative sources and fall back safely.
-- **Finalization**: When decisive, the on‑chain module commits the result; when ambiguous/non‑resolvable, a dispute path is enabled.
+**On-Chain Settlement Module**: Solana program that commits final outcomes to the blockchain with verifiable transaction records.
 
-## Why This Oracle Gets Markets Right
+## Settlement Workflow
 
-Purpose‑built for prediction markets where clarity, deadlines, and fairness matter most.
+### Phase 1: Criteria Generation
 
-- **Evidence‑first prompting**: Requires checking the listed sources, extracting exact values, and doing the calculation explicitly—not just summarizing news.
-- **Time‑bounded lookups**: Date filters prevent leakage from after‑deadline information.
-- **Authoritative‑source precedence**: Official databases and governing bodies outrank general reporting. Conflicts use a clear precedence policy.
-- **Deterministic rubric**: Criteria define what counts, how to count it, and how to compare it—before any decision is made.
-- **Multi‑provider optionality**: Uses multiple AI providers and can require agreement to reduce single‑model bias.
+After market creation, the oracle system performs initial assessment and criteria generation:
 
-## Operational Flow
+**Resolvability Assessment**
+- Evaluates whether the market question is objectively answerable by the deadline
+- Identifies authoritative sources for evidence collection
+- Defines specific metrics and thresholds for outcome determination
 
-- **Before end time**
-  - Run criteria generation for a batch of markets.
-  - Mark resolvable vs. non‑resolvable and store resolution sources.
-- **At/after end time**
-  - Execute settlement analysis with time‑bounded evidence.
-  - If decisive, finalize on‑chain; otherwise, enable refunds.
-- **Admin safety**
-  - Sensitive write actions are gated; emergency refund flows are supported.
-  - Many test endpoints are disabled in production.
+**Criteria Definition**
+- Establishes exact measurement parameters (scores, counts, prices, timestamps)
+- Creates objective rubric for outcome computation
+- Incorporates token-specific context for cryptocurrency markets
 
-## Non‑Technical Pitch
+**Market Classification**
+- Markets flagged as non-resolvable are filtered out and routed to refund mechanisms
+- Resolvable markets proceed to active trading phase
 
-- **Fair and transparent**: Decisions cite sources and show the arithmetic behind the outcome.
-- **Deadline‑honoring**: Uses information available before the market closes—no hindsight bias.
-- **Robust and pragmatic**: Human‑like reasoning that behaves like a careful adjudicator, not a chatbot.
-- **Multi‑model resilience**: Optional consensus reduces brittleness; disagreements trigger safe fallbacks.
-- **On‑chain finality with safety nets**: When clear, we settle; when unclear, refunds are enabled fast.
+### Phase 2: Settlement Execution
 
-## Oracle Roadmap
+At or after market end time, the oracle executes the settlement process:
 
-- Ongoing upgrades to criteria templates, source‑precedence policies, and time‑bounded retrieval.
-- Expanding support for more market types: token/coin price markets, sports, politics, social/media events, on‑chain protocol events, and custom rubric‑defined questions.
-- Deeper integration with Perplexity and Grok 4, plus additional MCP connectors for domain‑specific evidence.
-- Path to decentralization: optional operator network reaching consensus prior to finalization.
+**Evidence Collection**
+- Queries pre-identified authoritative sources
+- Extracts specific data points required for outcome determination
+- Applies time-bounded filters to prevent information leakage
+
+**LLM Evaluation**
+- Uses structured prompts to analyze collected evidence
+- Performs explicit calculations and threshold comparisons
+- Generates deterministic YES/NO outcomes with transparent reasoning
+
+**Consensus Mechanism**
+- Optional multi-provider consensus for increased confidence
+- Conflict resolution using authoritative source precedence
+- Safe fallback mechanisms for ambiguous cases
+
+**On-Chain Finalization**
+- Commits decisive outcomes to the blockchain
+- Enables refund mechanisms for ambiguous or non-resolvable markets
+- Provides transparent audit trail for all settlement decisions
+
+## Technical Specifications
+
+### LLM Integration
+
+**Provider Selection**
+- **Perplexity**: Real-time information retrieval with source attribution
+- **Grok 4**: Advanced reasoning capabilities for complex market analysis
+- **Multi-Provider Support**: Optional consensus mechanisms for critical decisions
+
+**Prompt Engineering**
+- Evidence-first prompting requiring explicit source verification
+- Structured data extraction with specific metric requirements
+- Transparent reasoning chains with verifiable calculations
+
+### Data Management
+
+**Time-Bounded Queries**
+- Strict deadline enforcement for all information collection
+- Prevents hindsight bias through temporal filtering
+- Maintains market integrity and fairness
+
+**Source Precedence**
+- Official databases and governing bodies receive highest priority
+- Clear conflict resolution policies for contradictory information
+- Transparent source attribution for all settlement decisions
+
+### Security Features
+
+**Access Control**
+- Sensitive operations require administrative authorization
+- Emergency refund mechanisms for edge cases
+- Production environment restrictions on test endpoints
+
+**Audit Trail**
+- Complete logging of all oracle decisions and reasoning
+- Transparent source attribution and calculation methods
+- On-chain verification of all settlement outcomes
+
+## Market Type Support
+
+### Current Support
+- **Token Price Markets**: Cryptocurrency price predictions with real-time data integration
+- **Social Media Events**: Platform-specific metrics and engagement data
+- **Sports Outcomes**: Official league and tournament results
+- **Political Events**: Government and electoral data sources
+
+### Planned Expansion
+- **On-Chain Protocol Events**: Smart contract and blockchain data integration
+- **Custom Rubric Markets**: User-defined resolution criteria
+- **Multi-Asset Markets**: Complex outcomes involving multiple data sources
+
+## Integration Points
+
+### API Layer
+- RESTful endpoints for market data and settlement status
+- Webhook support for real-time settlement notifications
+- Comprehensive market information and criteria access
+
+### Solana Integration
+- Native program integration for on-chain settlement
+- SPL token support for outcome token management
+- Program-derived addresses for secure account management
+
+### Developer Tools
+- SDK integration for oracle data access
+- Settlement criteria templates for common market types
+- Testing frameworks for oracle behavior validation
+
+## Roadmap
+
+### Short-term Improvements
+- Enhanced criteria templates for additional market types
+- Improved source precedence policies and conflict resolution
+- Expanded time-bounded data collection capabilities
+
+### Long-term Development
+- Decentralized operator network for consensus-based settlement
+- Additional MCP connectors for domain-specific evidence
+- Advanced multi-model consensus mechanisms
+- Integration with additional LLM providers and data sources
 
 

@@ -1,87 +1,101 @@
 ---
-title: "What's PNP?"
-description: "Overview of PNP Exchange"
+title: "PNP Exchange Protocol"
+description: "Decentralized prediction market protocol built on Solana"
 ---
 
-## PNP in a nutshell
+## Protocol Overview
 
-PNP Exchange is a decentralized prediction market protocol. Create a market for any event, trade outcome tokens via bonding curves (no order book), and settle results with real‑time LLM oracles—all on a composable, open stack.
+PNP Exchange is a decentralized prediction market protocol deployed on Solana that enables permissionless creation, trading, and settlement of prediction markets for real-world events. The protocol implements an automated market maker (AMM) model using bonding curves to provide continuous liquidity and price discovery.
 
-At its core, it is a permissionless platform that enables users to create and trade on prediction markets for any real-world event.
+## Architecture
 
-We break down traditional barriers in prediction markets by eliminating the need for order books and allowing people with skin in the game to express real-time sentiment around events through bonding curves.
-While traditional prediction markets suffer from liquidity issues and require market makers, PNP Exchange propagates trading through the power of automated market making.
+### Core Components
 
-The dynamic pricing expressed through bonding curves may not represent absolute truth, but it does represent a real-time data point that increases in accuracy as more people participate in these markets.
-PNP Exchange exposes the real-time sentiment behind events and fosters the search for truth by resolving prediction markets through decentralized oracles.
+**Market Creation**: Permissionless deployment of prediction markets with configurable parameters including question, end time, and initial liquidity.
 
-If a prediction market is a truth machine, then its "truth" is only as good as its accessibility and liquidity.
+**Bonding Curve AMM**: Continuous pricing mechanism using Pythagorean bonding curves that eliminates the need for order books and provides instant liquidity.
 
-Creating a market is easy, but finding the right price is priceless.
-PNP Exchange makes markets on everything.
-Jump right in
-## Explore PNP
+**Oracle Settlement**: Decentralized resolution system using LLM-assisted oracles that evaluate structured evidence and time-bounded data to determine market outcomes.
+
+**Token Economics**: Fair launch tokenomics with 100% community distribution and transparent fee structure.
+
+### Technical Specifications
+
+- **Network**: Solana mainnet-beta
+- **Collateral Token**: USDC (EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v)
+- **Trading Fee**: 1% on all transactions
+- **Settlement**: LLM-assisted oracles with structured evidence evaluation
+- **Liquidity Model**: Pythagorean bonding curves with automatic price discovery
+
+## Key Features
+
+- **Permissionless Market Creation**: No approval process or gatekeepers
+- **Continuous Liquidity**: Bonding curves provide liquidity from first trade
+- **Decentralized Settlement**: LLM oracles with transparent evidence evaluation
+- **Composable Architecture**: Open protocol for integration with DeFi infrastructure
+- **Fair Launch**: 100% community token distribution with no team allocation
+## Documentation
 
 <Columns cols={3}>
   <Card
-    title="Why we build this"
+    title="Protocol Architecture"
     icon="lightbulb"
     href="/why-we-build-this"
   >
-    The prediction market lifecycle and why USER-GENERATED-MARKETS matter.
+    Technical rationale and design principles behind the PNP protocol architecture.
   </Card>
   <Card
-    title="Core features"
+    title="Core Features"
     icon="list-check"
     href="/core-features"
   >
-    All-in-one launches, creator fees, LLM oracle settlement, and more.
+    Technical specifications for market creation, trading, and settlement mechanisms.
   </Card>
   <Card
-    title="Bonding curve"
+    title="Bonding Curves"
     icon="chart-line"
     href="/bonding"
   >
-    Continuous, on-chain pricing without a centralized order book.
+    Mathematical specifications and implementation details of the Pythagorean bonding curve AMM.
   </Card>
   <Card
-    title="Tokenomics"
+    title="Token Economics"
     icon="coins"
     href="/tokenomic"
   >
-    Fair launch and fee-sharing design for long-term sustainability.
+    Token distribution model, utility mechanisms, and economic sustainability design.
   </Card>
   <Card
-    title="Fees"
+    title="Fee Structure"
     icon="receipt"
     href="/development"
   >
-    Transparent 1% fee with creator, holder, and operations allocation.
+    Detailed breakdown of the 1% trading fee distribution across protocol participants.
   </Card>
   <Card
-    title="Oracle settlement"
+    title="Oracle System"
     icon="magic-wand-sparkles"
     href="/quickstart"
   >
-    How markets resolve with price data and AI-evaluated evidence.
+    LLM-assisted oracle architecture and settlement mechanism specifications.
   </Card>
 </Columns>
 
-## Build on PNP
+## Developer Resources
 
 <Columns cols={2}>
   <Card
-    title="API reference"
+    title="API Reference"
     icon="terminal"
     href="/api-reference/introduction"
   >
-    Endpoints for markets, outcomes, trades, and settlements.
+    Complete API documentation for market operations, trading, and settlement endpoints.
   </Card>
   <Card
-    title="Snippets"
+    title="SDK Documentation"
     icon="code"
-    href="/snippets/snippet-intro"
+    href="/pnp-sdk"
   >
-    Reusable examples for common integration flows.
+    TypeScript SDK with comprehensive examples for protocol integration.
   </Card>
 </Columns>
