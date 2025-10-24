@@ -1,52 +1,188 @@
 ---
-title: "Why PNP"
-description: "Reimagining the prediction market lifecycle: creation → trading → settlement"
+title: "Protocol Architecture"
+description: "Technical rationale and design principles behind PNP Exchange"
 ---
 
-## Our vision with PNP
+## Design Philosophy
 
-Prediction markets need a better end‑to‑end stack. We focus on the lifecycle: Market Creation → Market Trading → Market Settlement. Beyond the exchange, our goal is to build core InfoFi infrastructure: a decentralized prediction market exchange and an X bot that lets anyone tweet to create markets.
+PNP Exchange was designed to address fundamental limitations in existing prediction market infrastructure. The protocol implements a comprehensive end-to-end solution that reimagines the prediction market lifecycle: Market Creation → Market Trading → Market Settlement.
 
-### Market Creation
+### Core Design Principles
 
-Today, market creation is largely centralized. Gatekeepers decide what can be listed and when it goes live. We believe the next big unlock is USER-GENERATED-MARKETS—giving the power to launch a prediction market back to the user.
+**Decentralization**: Eliminate centralized gatekeepers and enable permissionless market creation
+**Composability**: Build modular primitives that integrate with existing DeFi infrastructure
+**Transparency**: Provide verifiable, auditable settlement mechanisms
+**Efficiency**: Optimize for instant liquidity and continuous price discovery
 
-- Permissionless creation for any verifiable question
-- No approval queues or gatekeepers
-- Creator ownership over market parameters and fees
+## Market Creation Architecture
 
-This shifts discovery and innovation to the edges, where the best questions and fastest iteration happen.
+### Problem: Centralized Gatekeeping
 
-### Market Trading
+Traditional prediction markets suffer from centralized control where platform operators decide which markets can be listed and when they go live. This creates several issues:
 
-Most exchanges match trades via a centralized order book. We use a bonding curve so any prediction market can clear trades continuously without an order book.
+- **Limited Market Coverage**: Only mainstream events receive market coverage
+- **Slow Innovation**: New market types require platform approval and development
+- **Censorship Risk**: Centralized control enables market censorship
+- **Barrier to Entry**: High costs and approval processes limit market creation
 
-- Continuous pricing via supply-sensitive curves
-- Instant buy/sell for any outcome at any time
-- No reliance on market makers or order depth
+### Solution: Permissionless Market Creation
 
-Bonding curves make trading mechanical and predictable, so markets remain usable from the first transaction. See more in our Bonding Curve overview.
+PNP Exchange implements permissionless market creation through:
 
-### Market Settlement
+**Smart Contract Deployment**
+- Markets are deployed as individual smart contracts on Solana
+- No approval process or gatekeeper intervention required
+- Creator retains full control over market parameters
 
-Status quo: current exchanges either settle markets themselves or outsource to dispute-vote oracles like UMA. We’ve seen high‑profile disputes and whale influence shape outcomes, undermining trust in neutrality. For example, CoinDesk reported on a Zelenskyy “suit” market controversy where incentives and token concentration drove resolution dynamics rather than facts.
+**Configurable Parameters**
+- Market question and description
+- End time and settlement criteria
+- Initial liquidity and fee structure
+- Oracle selection and data sources
 
-- Reference: [“‘This Isn’t Decentralized,’ Says Polymarket Power User…” (CoinDesk)](https://www.coindesk.com/markets/2025/07/09/this-isnt-decentralized-says-polymarket-power-user-as-zelenskyys-suit-controversy-unfolds)
+**Instant Deployment**
+- Markets become tradeable immediately upon creation
+- No waiting periods or approval queues
+- Creator receives initial token allocation
 
-Our approach: settle markets with sophisticated real‑time LLM models—no third party dispute vote. Models evaluate structured evidence (on‑chain parameters, price feeds, and curated off‑chain data like tweets or articles) and produce deterministic YES/NO outcomes that anyone can verify and submit on-chain.
+## Market Trading Architecture
 
-- No token‑weighted voting or whale capture
+### Problem: Order Book Limitations
+
+Traditional prediction markets rely on centralized order books that create several inefficiencies:
+
+- **Liquidity Fragmentation**: Thin order books lead to high slippage
+- **Market Maker Dependency**: Requires external liquidity providers
+- **Price Discovery Delays**: Manual order matching creates latency
+- **Counterparty Risk**: Traders must find matching counterparties
+
+### Solution: Bonding Curve AMM
+
+PNP Exchange implements a Pythagorean bonding curve AMM that provides:
+
+**Continuous Liquidity**
+- Every market has built-in liquidity from creation
+- No external market makers required
+- Guaranteed tradeability for all market participants
+
+**Automatic Price Discovery**
+- Prices adjust continuously based on supply and demand
+- Mathematical formulas ensure fair pricing
+- No manual intervention required for price updates
+
+**Instant Execution**
+- Trades execute immediately against the bonding curve
+- No counterparty matching required
+- Predictable slippage based on curve mathematics
+
+## Market Settlement Architecture
+
+### Problem: Centralized Settlement
+
+Existing prediction markets face significant settlement challenges:
+
+**Dispute-Based Systems**
+- Token-weighted voting enables whale manipulation
+- High-profile disputes undermine market credibility
+- Example: [Polymarket Zelenskyy suit controversy](https://www.coindesk.com/markets/2025/07/09/this-isnt-decentralized-says-polymarket-power-user-as-zelenskyys-suit-controversy-unfolds)
+
+**Centralized Resolution**
+- Platform operators control settlement decisions
+- Lack of transparency in decision-making process
+- Potential for bias and manipulation
+
+### Solution: LLM-Assisted Oracle System
+
+PNP Exchange implements a sophisticated oracle system that provides:
+
+**Evidence-Based Settlement**
+- Structured evidence evaluation using large language models
+- Time-bounded data collection to prevent hindsight bias
+- Transparent reasoning chains with verifiable calculations
+
+**Decentralized Decision Making**
+- No token-weighted voting or whale influence
 - Programmatic evidence collection and evaluation
-- Permissionless settlement calls after deadlines
+- Permissionless settlement after market deadlines
 
-### A Composable, Open Stack
+**Multi-Provider Consensus**
+- Integration with multiple LLM providers (Perplexity, Grok 4)
+- Optional consensus mechanisms for increased confidence
+- Conflict resolution using authoritative source precedence
 
-We envision an open future powered by information finance. That requires the entire prediction market stack to be composable:
+## Composable Infrastructure
 
-- Market creation as a primitive (USER-GENERATED-MARKETS)
-- Trading as a curve‑based liquidity primitive
-- Settlement as an evidence‑driven, model‑verifiable primitive
+### Modular Design
 
-On top of these, several derivatives can be built—options on probabilities, perpetuals on outcome deltas, structured payouts, and baskets of markets—allowing anyone to create higher‑order products and strategies.
+PNP Exchange is built as a composable protocol with three core primitives:
 
-PNP Exchange is building this composable stack so prediction markets become universal infrastructure for pricing information.
+**Market Creation Primitive**
+- Smart contract templates for different market types
+- Configurable parameters and oracle integration
+- Standardized interfaces for third-party integration
+
+**Trading Primitive**
+- Bonding curve AMM with predictable pricing
+- Standard SPL token integration
+- Compatible with existing DeFi protocols
+
+**Settlement Primitive**
+- LLM-assisted oracle with structured evidence evaluation
+- Transparent decision-making process
+- Verifiable on-chain outcomes
+
+### Integration Capabilities
+
+**DeFi Integration**
+- Compatible with existing Solana DeFi protocols
+- Standard token interfaces for cross-protocol compatibility
+- Program-derived addresses for secure account management
+
+**Developer Tools**
+- TypeScript SDK for easy integration
+- RESTful API for market data access
+- Comprehensive documentation and examples
+
+**Future Extensions**
+- Options on probabilities
+- Perpetuals on outcome deltas
+- Structured payouts and market baskets
+- Custom oracle integrations
+
+## Technical Advantages
+
+### Scalability
+- Solana's high throughput enables rapid market creation and trading
+- Bonding curves provide infinite liquidity without external providers
+- Modular architecture supports horizontal scaling
+
+### Security
+- Smart contract-based market deployment
+- Transparent oracle decision-making
+- On-chain verification of all operations
+
+### Efficiency
+- Instant market creation and trading
+- Continuous price discovery
+- Automated settlement without manual intervention
+
+## Vision: Information Finance Infrastructure
+
+PNP Exchange aims to become the foundational infrastructure for information finance, enabling:
+
+**Universal Market Coverage**
+- Any verifiable event can have a prediction market
+- No geographical or topic restrictions
+- Community-driven market discovery
+
+**Composable Financial Products**
+- Prediction markets as building blocks for complex instruments
+- Integration with traditional and decentralized finance
+- Innovation at the protocol level
+
+**Decentralized Information Pricing**
+- Collective intelligence through market mechanisms
+- Transparent and verifiable information aggregation
+- Resistance to manipulation and censorship
+
+This architecture positions PNP Exchange as the infrastructure layer for a new class of financial instruments that price information and enable decentralized decision-making.

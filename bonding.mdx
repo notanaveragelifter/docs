@@ -1,49 +1,123 @@
 ---
-title: 'Bonding Curve'
-description: 'Our bonding curve ensures perpetual liquidity'
+title: "Bonding Curve AMM"
+description: "Mathematical specifications and implementation of the Pythagorean bonding curve"
 ---
 
-## Bonding curve mechanism
+## Bonding Curve Architecture
 
-PNP Exchange prices outcome tokens with a Pythagorean bonding curve—an on‑chain AMM that provides continuous liquidity from the first trade.
-Prices adjust smoothly with supply, so users can buy or sell without a traditional order book.
-Liquidity is built in, not borrowed from external market makers. We are also exploring delta‑neutral LP strategies to make providing liquidity safer.
+PNP Exchange implements a Pythagorean bonding curve as the core automated market maker (AMM) mechanism for prediction markets. This design provides continuous liquidity and price discovery without requiring external market makers or order books.
 
+### Core Principles
 
-## PNP Exchange makes liquidity mathematical.
+**Continuous Liquidity**: Every market has built-in liquidity from the moment of creation, eliminating the need for external liquidity providers.
 
-<Frame>
-  <img src="/images/SS2.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
-</Frame>
+**Automatic Price Discovery**: Token prices adjust automatically based on supply and demand through mathematical formulas.
 
+**No Order Book Dependency**: Trading occurs directly against the bonding curve, removing counterparty risk and order book complexity.
 
-### The Pythagorean Formula
+## Mathematical Specification
 
-The total reserve calculation follows this formula:
+### Pythagorean Formula
 
+The bonding curve uses a modified Pythagorean formula to maintain price relationships:
 
-Where:
-- `r` is the total reserve (capital) invested in the prediction market
-- `s_yes`, `s_no`, `s_draw` are the supplies of YES, NO, and DRAW tokens respectively
-- `c` is a coefficient that starts at 1 and gradually grows to account for accrued fees
+```
+r² = s_yes² + s_no² + s_draw²
+```
 
-We use a modified version of the pythagorean bonding curve with the constraint that Price(yes)^2 + Price(no)^2 == 1 
+**Where:**
+- `r` = Total reserve (capital) invested in the prediction market
+- `s_yes` = Supply of YES outcome tokens
+- `s_no` = Supply of NO outcome tokens  
+- `s_draw` = Supply of DRAW outcome tokens (when applicable)
+- `c` = Coefficient that starts at 1 and grows to account for accrued fees
 
-### How it works
+### Price Constraint
 
-- Automatic pricing: Token prices adjust based on supply changes. More YES buys push YES up and NO down.
-- Genesis liquidity: When a market is created with initial liquidity X, the creator receives equal amounts of YES and NO backed by reserve X.
+The implementation maintains the constraint:
+```
+Price(yes)² + Price(no)² = 1
+```
 
-## Why bonding curves power UGC markets
+This ensures that the sum of squared prices always equals 1, maintaining mathematical consistency in the pricing model.
 
-Bonding curves are a cornerstone of DeFi engineering. They turn market making into code and keep markets usable from day one.
-We’re doubling down on advanced AMM design so USER-GENERATED-MARKETS can launch instantly, stay liquid, and scale to any niche.
+### Price Calculation
 
-### Benefits
+Token prices are calculated based on the current supply and reserve:
 
-- Fair price discovery: Prices reflect real demand and supply
-- Sustainable economics: Trading fees accrue to the reserve and long‑term LPs
+**YES Token Price:**
+```
+P_yes = s_yes / r
+```
 
-### Further reading
+**NO Token Price:**
+```
+P_no = s_no / r
+```
 
-- Background on bonding‑curve prediction markets and the Pythagorean approach: [Introducing Prophet — Prediction Markets Based On Bonding Curves](https://blog.obyte.org/introducing-prophet-prediction-markets-based-on-bonding-curves-3716651db344)
+## Implementation Details
+
+### Market Creation
+
+When a market is created with initial liquidity `X`:
+1. Creator provides `X` USDC as initial reserve
+2. Creator receives equal amounts of YES and NO tokens
+3. Initial token supplies are calculated to maintain price equilibrium
+4. Market becomes immediately tradeable
+
+### Trading Mechanics
+
+**Buying Tokens:**
+- User provides USDC collateral
+- Tokens are minted based on current curve position
+- Reserve increases, affecting future token prices
+- Fee is applied and distributed according to protocol rules
+
+**Selling Tokens:**
+- User burns outcome tokens
+- USDC is returned based on current curve position
+- Reserve decreases, affecting future token prices
+- Fee is applied and distributed according to protocol rules
+
+### Fee Integration
+
+The bonding curve incorporates a fee coefficient `c` that:
+- Starts at 1.0 for new markets
+- Increases over time as fees accrue
+- Ensures sustainable economics for long-term liquidity provision
+- Maintains price discovery while generating protocol revenue
+
+## Advantages
+
+### For Market Creators
+- **Instant Liquidity**: Markets are tradeable immediately upon creation
+- **No Market Maker Requirements**: No need to find external liquidity providers
+- **Predictable Economics**: Clear fee structure and revenue sharing
+
+### For Traders
+- **Always Tradeable**: No risk of being unable to exit positions
+- **Transparent Pricing**: Prices calculated by verifiable mathematical formulas
+- **No Slippage from Order Book**: Direct trading against the curve
+
+### For the Protocol
+- **Scalable**: Works for any market size or niche
+- **Composable**: Integrates with existing DeFi infrastructure
+- **Sustainable**: Fees accrue to the protocol and participants
+
+## Technical Implementation
+
+### On-Chain Components
+- **Solana Program**: Handles all bonding curve calculations
+- **SPL Tokens**: YES/NO tokens as standard SPL tokens
+- **USDC Collateral**: Standard collateral token for all markets
+- **Program-Derived Addresses**: Secure account management
+
+### Integration Points
+- **SDK Support**: TypeScript SDK for easy integration
+- **API Endpoints**: RESTful API for market data access
+- **Event Logging**: Comprehensive transaction logging for transparency
+
+## References
+
+For additional technical background on bonding curve prediction markets:
+- [Introducing Prophet — Prediction Markets Based On Bonding Curves](https://blog.obyte.org/introducing-prophet-prediction-markets-based-on-bonding-curves-3716651db344)

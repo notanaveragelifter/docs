@@ -11,35 +11,35 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
+              "how-to-use"
+            ]
+          },
+          {
+            "group": "Protocol Architecture",
+            "pages": [
               "why-we-build-this",
-              "how-to-use",
-              "core-features"
-            ]
-          },
-          {
-            "group": "Markets Supported",
-            "pages": [
-              "youtube"
-            ]
-          },
-          {
-            "group": "PNP architecture",
-            "pages": [
-             "quickstart",
-              "development",
+              "core-features",
+              "bonding",
+              "quickstart",
               "tokenomic",
-              "bonding"
+              "development"
             ]
-          }
-          ,
+          },
           {
-            "group": "$PNP Suite",
+            "group": "Market Types",
+            "pages": [
+              "youtube",
+              "defillama"
+            ]
+          },
+          {
+            "group": "Developer Resources",
             "pages": [
               "pnp-sdk",
               "pnp-agent"

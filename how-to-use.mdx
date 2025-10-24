@@ -1,85 +1,197 @@
 ---
-title: "How to use"
-description: "This page guides you through creating prediction markets and trading, providing step-by-step instructions to participate easily and confidently."
+title: "User Guide"
+description: "Complete guide to using PNP Exchange for market creation and trading"
 ---
 
-### Market Creation
+## Getting Started
 
-General Prediction Market
+### Prerequisites
 
-Covers forecasts across sports, politics, tech, bitcoin, culture, and more.   
-Settlement: Perplexity + Grok
+Before using PNP Exchange, ensure you have:
+- A Solana wallet (Phantom, Solflare, or similar)
+- USDC tokens for market creation and trading
+- Basic understanding of prediction markets
 
-<Frame>
-  <img src="/images/SS3.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
-</Frame>
+### Connecting Your Wallet
 
-Token Prediction Market 
+1. Visit the PNP Exchange platform
+2. Click "Connect Wallet" in the top navigation
+3. Select your preferred Solana wallet
+4. Approve the connection request
 
-Price predictions for any Solana-based token, even newly launched within minutes.  
-Settle: Coin MCP ( realtime coin data from Coingecko, Birdeye )
+## Market Creation
 
-<Frame>
-  <img src="/images/SS6.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
-</Frame>
+### General Prediction Markets
 
-### Market Settlement Analysis
+Create markets for events across sports, politics, technology, cryptocurrency, and culture.
 
-After market creation, please wait for the settlement analysis to complete before proceeding.
-
-<Frame>
-  <img src="/images/SS7.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
-</Frame>
-
-Perplexity/Grok determines whether the market is resolvable.
+**Settlement Method**: LLM-assisted oracles (Perplexity + Grok)
 
 <Frame>
-  <img src="/images/SS8.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
+  <img src="/images/SS3.png" alt="General prediction market creation interface" style={{ borderRadius: '0.5rem' }} />
 </Frame>
 
+**Steps:**
+1. Click "Create Market" on the platform
+2. Enter your market question
+3. Set the end date and time
+4. Provide initial liquidity (minimum USDC required)
+5. Submit for oracle analysis
 
+### Token Price Prediction Markets
 
-### Market Trading
+Create markets for price predictions of any Solana-based token, including newly launched tokens.
 
-Select the market you wish to trade on.
+**Settlement Method**: Real-time price data from CoinGecko and Birdeye
 
 <Frame>
-  <img src="/images/SS4.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
+  <img src="/images/SS6.png" alt="Token prediction market creation interface" style={{ borderRadius: '0.5rem' }} />
 </Frame>
+
+**Steps:**
+1. Select "Token Price Market" option
+2. Enter the token address or select from list
+3. Define the price target and timeframe
+4. Set initial liquidity
+5. Submit for market creation
+
+## Market Settlement Analysis
+
+After market creation, the oracle system performs initial analysis to determine market resolvability.
+
+<Frame>
+  <img src="/images/SS7.png" alt="Market settlement analysis in progress" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+**Analysis Process:**
+1. Oracle evaluates market question for resolvability
+2. Identifies authoritative data sources
+3. Generates settlement criteria
+4. Markets are marked as "Resolvable" or "Non-resolvable"
+
+<Frame>
+  <img src="/images/SS8.png" alt="Market resolvability determination" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+**Market States:**
+- **Resolvable**: Market can be settled using available data sources
+- **Non-resolvable**: Market cannot be objectively settled, eligible for creator refund
+
+## Trading
+
+### Selecting Markets
+
+Browse available markets and select the one you want to trade on.
+
+<Frame>
+  <img src="/images/SS4.png" alt="Market selection interface" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+**Market Information:**
+- Current YES/NO token prices
+- Total liquidity and trading volume
+- Time remaining until market end
+- Settlement criteria and data sources
+
+### Placing Trades
 
 Purchase YES or NO tokens to participate in the market.
 
 <Frame>
-  <img src="/images/SS5.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
+  <img src="/images/SS5.png" alt="Trading interface for buying outcome tokens" style={{ borderRadius: '0.5rem' }} />
 </Frame>
 
+**Trading Process:**
+1. Select the outcome you want to bet on (YES or NO)
+2. Enter the amount of USDC you want to spend
+3. Review the estimated tokens you'll receive
+4. Confirm the transaction in your wallet
+5. Tokens are automatically added to your wallet
 
+**Trading Features:**
+- Real-time price updates
+- Instant liquidity through bonding curves
+- Transparent fee structure (1% trading fee)
+- No slippage from order book mechanics
 
+## Fee Management
 
+### Claiming Creator Fees
 
-
-
-### Claim creator fees
-
-Claim creator fees across all your markets with a single click—no need to wait for settlement.
+Market creators can claim accumulated fees from their markets at any time.
 
 <Frame>
-  <img src="/claimfees.png" alt="Creator fees card with a Claim Fees button" style={{ borderRadius: '0.5rem' }} />
-  
+  <img src="/claimfees.png" alt="Creator fees interface with claim button" style={{ borderRadius: '0.5rem' }} />
 </Frame>
 
-### Refund non‑resolvable markets
+**Fee Claiming:**
+1. Navigate to your profile dashboard
+2. View accumulated fees across all your markets
+3. Click "Claim Fees" to withdraw all accumulated fees
+4. Fees are automatically distributed to your wallet
 
-If our AI marks a market as non‑resolvable, the creator can reclaim their initial liquidity. Go to the User section, open the market marked Non‑resolvable, and click Claim Refund.
+**Fee Structure:**
+- 50% of all trading fees go to market creators
+- Fees accumulate automatically as markets are traded
+- No minimum threshold required for claiming
+
+### Refunding Non-resolvable Markets
+
+If a market is marked as non-resolvable, creators can reclaim their initial liquidity.
 
 <Frame>
-  <img src="/refund.png" alt="Market details showing Claim Refund for a non‑resolvable market" style={{ borderRadius: '0.5rem' }} />
+  <img src="/refund.png" alt="Non-resolvable market refund interface" style={{ borderRadius: '0.5rem' }} />
 </Frame>
 
-### Your markets dashboard
+**Refund Process:**
+1. Go to your profile's "My Markets" section
+2. Find markets marked as "Non-resolvable"
+3. Click "Claim Refund" on the specific market
+4. Initial liquidity is returned to your wallet
 
-In your profile’s User section, view all markets you have created and every bet you’ve placed.
+**Refund Eligibility:**
+- Market must be marked as non-resolvable by the oracle
+- Only the market creator can claim the refund
+- Refund amount equals the initial liquidity provided
+
+## Portfolio Management
+
+### Market Dashboard
+
+View all your market activity in one place.
 
 <Frame>
-  <img src="/created_markets.png" alt="User profile listing created markets and predictions" style={{ borderRadius: '0.5rem' }} />
+  <img src="/created_markets.png" alt="User dashboard showing created markets and trades" style={{ borderRadius: '0.5rem' }} />
 </Frame>
+
+**Dashboard Features:**
+- **Created Markets**: All markets you've created with status and performance
+- **Active Trades**: Current positions in various markets
+- **Fee Earnings**: Accumulated creator fees across all markets
+- **Trading History**: Complete record of all your trades
+
+**Market Status Tracking:**
+- **Active**: Market is currently accepting trades
+- **Ended**: Market has reached its end time, awaiting settlement
+- **Resolved**: Market has been settled with a winning outcome
+- **Non-resolvable**: Market cannot be settled, eligible for refund
+
+## Best Practices
+
+### Market Creation
+- Create clear, specific questions that can be objectively answered
+- Set realistic end times that allow for sufficient trading activity
+- Provide adequate initial liquidity to ensure market viability
+- Choose appropriate market types based on available data sources
+
+### Trading
+- Research markets thoroughly before placing trades
+- Consider the time remaining and settlement criteria
+- Diversify your positions across multiple markets
+- Monitor your portfolio regularly for market updates
+
+### Risk Management
+- Only trade with funds you can afford to lose
+- Understand that prediction markets involve inherent risk
+- Review settlement criteria before placing trades
+- Keep track of your positions and market statuses

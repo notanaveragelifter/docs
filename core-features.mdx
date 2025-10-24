@@ -1,102 +1,94 @@
 ---
-title: "Core features"
-description: "Overview of PNP Stack"
+title: "Core Features"
+description: "Technical specifications and protocol features"
 ---
 
-### —> Creator fees
+## Protocol Features
 
-Creators earn 50% of the 1% trading fee their markets generate. As participants trade on the bonding curve, a share of volume accrues to the market creator—rewarding high‑quality markets and ongoing curation.
+### Market Creation
 
-- 1% fee on buys and sells
-- Earnings scale with market engagement
-- Transparent on-chain accrual
+**Permissionless Market Deployment**
+- No approval process or gatekeepers required
+- Instant market creation with Solana wallet and USDC collateral
+- Configurable parameters: question, end time, initial liquidity
+- Markets become tradeable immediately upon creation
 
+**Supported Market Types**
+- Token price predictions (any Solana-based token)
+- Social media events and announcements
+- Sports outcomes and political events
+- Custom questions with verifiable resolution sources
 
-### —> Permissionless launches
-Launch a market in seconds with a Solana wallet and USDC—no listings, no approvals. Markets become tradeable immediately after creation.
+### Bonding Curve AMM
 
-### —> LLM Oracle settlement
+**Pythagorean Bonding Curve Implementation**
+- Continuous pricing mechanism without order books
+- Automatic price discovery based on supply and demand
+- Guaranteed liquidity from first trade
+- Mathematical formula: `r² = s_yes² + s_no² + s_draw²`
 
-Markets settle via structured, real‑time LLM evaluation—no token‑weighted dispute votes or third‑party resolution councils. Models analyze on‑chain parameters and curated off‑chain evidence (e.g., price feeds, official accounts, articles) to produce deterministic YES/NO outcomes that anyone can submit on‑chain.
-
-- Reduces manipulation risk from whale voting
-- Programmatic evidence collection and auditability
-- Permissionless settlement after deadlines
-
-### —> Prediction Market DEX Launchpad 
-
-Launch a prediction market on any topic: state the question, and our AI helps derive resolvability criteria. PNP bundles market creation, curve‑based trading, and oracle settlement into a single, seamless protocol—no external order book, no third‑party disputes, no manual hand‑offs.
-
-
-- One flow: create → trade → earn
-- Unified UX for creators, traders, and resolvers
-- On-chain primitives designed to compose together
-
-
- 
-
-### —No off-chain orderbook
-
-All trading uses an on‑chain bonding curve. Prices adjust continuously with supply—so you can always buy or sell outcome tokens without needing counterparties or an order book.
-
-- Bonding‑curve AMM (parameters iterate over time)
+**Key Properties**
 - Predictable pricing mechanics
-- Works even for long-tail, niche markets
-
-### 🌊 Bonding Curve Liquidity
-
-**Guaranteed liquidity for every market**
-
-Our Pythagorean bonding curve ensures that every prediction market has built-in liquidity from the moment it's created. No need to wait for market makers or worry about thin order books.
-
-<Card title="How it works" icon="chart-line">
-  Token prices automatically adjust based on supply changes through mathematical formulas, ensuring fair price discovery and constant liquidity availability.
-</Card>
-
-**Key Benefits:**
-- Always tradeable markets
-- Automatic price discovery
 - No liquidity provider risk
-- Fair and transparent pricing
+- Works for long-tail and niche markets
+- Transparent and auditable price calculations
 
+### Oracle Settlement System
 
-### 💎 Fair Launch Tokenomics
+**LLM-Assisted Oracle Architecture**
+- Structured evidence evaluation using large language models
+- Time-bounded data collection to prevent hindsight bias
+- Programmatic evidence collection and auditability
+- Deterministic YES/NO outcomes with transparent reasoning
 
-**True community ownership from day one**
+**Settlement Process**
+1. Criteria generation and resolvability assessment
+2. Evidence collection from authoritative sources
+3. LLM evaluation with structured prompts
+4. On-chain settlement with verifiable outcomes
 
-PNP Exchange launched with complete fairness—no team allocation, no private sales, no reserved tokens.
+### Fee Structure
 
-**Distribution Breakdown:**
-- 0% Team Allocation
-- 0% Private Sales  
-- 0% Reserved Tokens
-- 100% Community Distribution
+**Trading Fee Distribution (1% total)**
+- 50% → Market Creators (incentivizes quality market creation)
+- 15% → Platform Operations (development and infrastructure)
+- 15% → $PNP Token Holders (staking rewards and buybacks)
+- 10% → Referral Program (user acquisition incentives)
+- 10% → Insurance Fund (protocol security and risk management)
 
-### 💰 Revenue Sharing Model
+**Fee Mechanics**
+- Applied to all buy and sell transactions
+- Transparent on-chain accrual and distribution
+- Creator fees claimable at any time
+- Automatic fee collection and redistribution
 
-**Sustainable economics that reward all participants**
+### Token Economics
 
-Our 1% trading fee is distributed across the ecosystem to ensure long-term sustainability and growth.
+**Fair Launch Model**
+- 100% community distribution at launch
+- 0% team allocation or private sales
+- 0% reserved tokens
+- True community ownership from day one
 
-**Fee Distribution:**
-- 50% → Market Creators
-- 15% → Platform Operations
-- 15% → $PNP Token Holders
-- 10% → Referral Program
-- 10% → Insurance Fund
+**Token Utility**
+- Fee sharing for token holders (15% of trading fees)
+- Governance rights for protocol decisions
+- Enhanced benefits for staked tokens
+- Twitter-native market creation capabilities
 
-### 🏗️ Permissionless Market Creation
+### Technical Architecture
 
-**Create markets for anything, instantly**
+**On-Chain Components**
+- Solana program for market operations
+- SPL Token integration for outcome tokens
+- USDC as collateral token
+- Program-derived addresses for market accounts
 
-No permissions, approvals, or minimum capital requirements. If you can imagine an event worth betting on, you can create a market for it.
-
-**Market Types Supported:**
-- Price predictions for any token
-- Social media events and announcements  
-- Sports outcomes
-- Political events
-- Custom questions with trusted resolution sources
+**Integration Points**
+- Composable with existing DeFi infrastructure
+- Open protocol for third-party integrations
+- SDK for developer integration
+- API endpoints for market data access
 
 
 
