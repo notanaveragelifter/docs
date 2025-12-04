@@ -25,19 +25,23 @@
           {
             "group": "Markets Supported",
             "pages": [
-              "youtube"
+              "general",
+              "youtube",
+              "coin",
+              "twitter",
+              "defillama"
             ]
           },
           {
             "group": "PNP architecture",
             "pages": [
-             "quickstart",
+              "quickstart",
               "development",
               "tokenomic",
-              "bonding"
+              "bonding",
+              "module"
             ]
-          }
-          ,
+          },
           {
             "group": "$PNP Suite",
             "pages": [
@@ -87,15 +91,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {

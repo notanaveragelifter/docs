@@ -1,0 +1,103 @@
+---
+title: "Market Models"
+description: "Understanding the different market models available for creating prediction markets - P2P Markets and Pythagorean Prediction Markets."
+---
+
+## Market Models
+
+PnP Protocol offers two distinct market models, each designed for different trading mechanisms and liquidity structures.
+
+---
+
+## P2P Markets
+
+Peer-to-peer markets where participants trade directly with each other.
+
+**Coming Soon** - Documentation for P2P Markets will be added here.
+
+---
+
+## Pythagorean Prediction Markets
+
+Pythagorean markets use algorithmic market makers to provide liquidity and determine prices. We offer two versions:
+
+### V2 Model - Liquidity Split Equally
+
+The V2 model splits liquidity equally into YES/NO positions, creating a balanced market from the start.
+
+**Required Parameters:**
+
+**Question***
+The prediction question you want to create a market for.
+
+*Example:* "Will Apple announce a new product category in 2025?"
+
+**Expire Date & Time***
+Set when the market will close and be ready for settlement.
+
+*Example:* December 31st, 2025 at 00:00
+
+> [!IMPORTANT]
+> Minimum market deadline is 2 days for other market types
+
+**Initial Liquidity***
+The amount of USDC you want to provide as initial liquidity for the market.
+
+*Example:* 2 USDC
+
+> [!NOTE]
+> Initial liquidity is split equally between YES and NO positions in the V2 model
+
+---
+
+### V3 Model - Parimutuel
+
+The V3 parimutuel model allows traders to choose their side and includes a maximum pot ratio mechanism.
+
+**Required Parameters:**
+
+**Question***
+The prediction question you want to create a market for.
+
+*Example:* "Will Bitcoin reach $100,000 by the end of 2025?"
+
+**Expire Date & Time***
+Set when the market will close and be ready for settlement.
+
+*Example:* December 31st, 2025 at 23:59
+
+**Choose Side**
+Select which side of the market you want to support initially.
+
+**Max Pot Ratio**
+Define the maximum pot ratio to control the distribution of winnings.
+
+**Initial Liquidity***
+The amount of USDC you want to provide as initial liquidity for the market.
+
+> [!NOTE]
+> In the parimutuel model, all bets go into a pool, and winners share the total pool proportionally based on their stake
+
+---
+
+## Key Differences
+
+| Feature | V2 Model | V3 Parimutuel |
+|---------|----------|---------------|
+| **Liquidity Distribution** | Split equally YES/NO | Choose side |
+| **Pricing Mechanism** | Algorithmic market maker | Parimutuel pool |
+| **Max Pot Ratio** | Not applicable | Configurable |
+| **Best For** | Balanced markets | Event-based betting |
+
+---
+
+## Creating Your Market
+
+1. Choose your market type (General, YouTube, Coin, Twitter, or DefiLlama)
+2. Select your model (V2 or V3 Parimutuel)
+3. Fill in the required parameters
+4. Provide initial liquidity in USDC
+5. Submit for review and wait for market to go live
+
+> [!TIP]
+> Start with smaller liquidity amounts while you're learning how the different models work

@@ -1,0 +1,78 @@
+---
+title: "DefiLlama Predictions"
+description: "This section details the process for setting up DefiLlama-based markets, where participants can predict and trade outcomes tied to DeFi protocol metrics and TVL data."
+---
+
+### DeFi Protocol Predictions
+
+Predictions based on DeFi protocol performance, TVL changes, and market metrics.
+Settlement: DeFiLlama API + LLM
+
+
+### Step 1: Choose Your Market Type
+
+Select "DefiLlama Markets" from the available market types to create DeFi protocol-based prediction markets.
+
+<Frame>
+  <img src="/images/defillama-ss1.png" alt="Interface showing market type selection" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+### Step 2: Select DeFi Protocol
+
+Search and select the DeFi protocol you want to create a market for.
+The interface will show matching protocols with their category and current TVL.
+
+**Example:**
+- Search for "Lido"
+- See: **Lido** - Liquid Staking, TVL: $27.5B
+- Select the protocol to proceed
+
+<Frame>
+  <img src="/images/defillama-ss2.png" alt="Protocol selection interface showing search results" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+### Step 3: Select Metric
+
+Choose the specific metric you want to predict for the selected protocol:
+
+**Available Metrics:**
+- **TVL** - Total Value Locked in the protocol
+- **Market Cap** - Protocol market capitalization
+- **Outflows** - Token outflows from the protocol
+
+The selected protocol information (name, category, and current TVL) will be displayed for confirmation.
+
+<Frame>
+  <img src="/images/defillama-ss3.png" alt="Metric selection interface" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+
+### Step 4: Set Your Prediction Question
+
+Craft your prediction question based on the protocol's metrics. Here are some example questions:
+
+**Example Questions:**
+- "Will Lido's TVL reach $30 billion or more by February 5, 2026?"
+- "Will the protocol's Market Cap exceed $5 billion by the end of this quarter?"
+- "Will token outflows from the protocol surpass $500 million within the next 30 days?"
+
+Choose what to predict about the protocol based on your selected metric - TVL, Market Cap, or Outflows.
+Select a timeframe for your prediction - end of day, week, month, or quarter.
+Uses DefiLlama API to fetch the latest protocol data and real-time metrics.
+
+
+### Market Settlement
+
+Markets automatically settle using our DefiLlama API integration combined with LLM verification when the prediction timeframe ends.
+After settlement, the system verifies the outcome by checking the actual protocol metrics (TVL, Market Cap, or Outflows).
+The settlement process ensures accuracy by cross-referencing data from DefiLlama API and using LLM to validate the results.
+
+
+
+### Popular Use Cases
+
+- Predicting TVL milestones for emerging protocols
+- Forecasting revenue growth for established DeFi platforms
+- Estimating fee generation for DEXs
+- Predicting user adoption for lending protocols
+- Forecasting market share changes in DeFi categories

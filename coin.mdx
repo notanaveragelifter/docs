@@ -1,0 +1,67 @@
+---
+title: "Coin Predictions"
+description: "This section details the process for setting up cryptocurrency-based markets, where participants can predict and trade outcomes tied to coin price movements and market data."
+---
+
+### Cryptocurrency Price Predictions
+
+Create prediction markets based on cryptocurrency performance metrics like price movements, market cap, or trading volume.
+Settlement: Automatic via Birdeye API integration
+
+
+### Step 1: Choose Your Market Type
+
+Select "Coin Markets" from the available market types to create cryptocurrency-based prediction markets.
+
+<Frame>
+  <img src="/images/coin-ss1.png" alt="Interface showing market type selection" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+### Step 2: Get Coin Address from DexScreener
+
+Navigate to [DexScreener](https://dexscreener.com/) and search for your desired token.
+Copy the contract address of the coin you want to create a market for.
+
+<Frame>
+  <img src="/images/coin-ss2.png" alt="DexScreener interface showing how to copy coin address" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+### Step 3: Paste Coin Address
+
+Paste the copied contract address into the coin market creation interface.
+The system will automatically fetch the latest data using Birdeye API.
+
+<Frame>
+  <img src="/images/coin-ss3.png" alt="Interface showing where to paste coin address" style={{ borderRadius: '0.5rem' }} />
+</Frame>
+
+
+### Step 4: Set Your Prediction Question
+
+Craft your prediction question based on the coin's metrics. Here are some example questions:
+
+**Example Questions:**
+- "Will this token see its total liquidity rise to $500K or more by February 5, 2026?"
+- "Will the token price reach $1.00 or higher by the end of this month?"
+- "Will the market cap exceed $10M within the next 7 days?"
+
+Choose what to predict about the coin - price targets, percentage changes, liquidity milestones, or market cap goals.
+Select a timeframe for your prediction - end of hour, day, week, or month.
+Uses Birdeye API to fetch the latest forecast and real-time market data.
+
+
+### Market Settlement
+
+Markets automatically settle using our Birdeye API integration when the prediction timeframe ends.
+After settlement, the system verifies the outcome by checking the actual price data and market conditions for the coin.
+The settlement process ensures accuracy by cross-referencing multiple data points from Birdeye API.
+
+
+
+### Popular Use Cases
+
+- Predicting price targets for trending tokens
+- Forecasting all-time high (ATH) breakouts
+- Estimating market cap rankings
+- Predicting trading volume spikes
+- Forecasting token listings on major exchanges
