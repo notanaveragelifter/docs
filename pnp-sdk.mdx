@@ -15,6 +15,15 @@ description: "Client libraries for integrating with PNP Exchange"
   - [Features](#features)
   - [Installation](#installation)
   - [Quick Start](#quick-start)
+- [How to Create a Market](#how-to-create-a-market)
+  - [Creating a V2 AMM Market](#creating-a-v2-amm-market)
+  - [Creating a P2P Market](#creating-a-p2p-market)
+- [How to Get Refund Initial Liquidity](#how-to-get-refund-initial-liquidity)
+  - [Claiming Refund for V2 AMM Market](#claiming-refund-for-v2-amm-market)
+  - [Claiming Refund for P2P Market](#claiming-refund-for-p2p-market)
+- [How to Trade](#how-to-trade)
+  - [Trading on V2 AMM Markets](#trading-on-v2-amm-markets)
+  - [Trading on P2P Markets](#trading-on-p2p-markets)
 - [API Reference](#api-reference)
   - [Core Client](#core-client)
   - [Main SDK Methods](#main-sdk-methods)
@@ -217,6 +226,334 @@ yarn add @pnp-sdk
      }
    }
    ```
+
+## How to Create a Market
+
+This section provides complete working scripts for creating prediction markets using the PNP SDK. There are two types of markets you can create:
+
+1. **V2 AMM Markets**: Traditional automated market maker (AMM) pools where liquidity is provided upfront
+2. **P2P Markets**: Peer-to-peer markets where the creator takes a position on one side
+
+### Creating a V2 AMM Market
+
+V2 markets use an AMM model where you provide initial liquidity that gets split between YES and NO tokens. This script demonstrates how to create a V2 market with USDC as collateral.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from '@pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+
+async function main() {
+  // Initialize client with private key
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+
+  // Market parameters
+  const question = 'Will Bitcoin reach $100K by end of 2025?';
+  const initialLiquidity = 1_000_000n; // 1 USDC (6 decimals)
+  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
+  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
+
+  // Create the market
+  const result = await client.market.createMarket({
+    question,
+    initialLiquidity,
+    endTime,
+    baseMint: collateralMint,
+  });
+
+  console.log('Market created successfully!');
+  console.log('Signature:', result.signature);
+  console.log('Market Address:', result.market.toBase58());
+}
+
+main().catch(console.error);
+```
+
+**Key Points for V2 Markets:**
+- Initial liquidity is split equally between YES and NO tokens in the AMM pool
+- The creator doesn't take a position; they provide liquidity for others to trade against
+- Use `client.market.createMarket()` for V2 markets
+
+### Creating a P2P Market
+
+P2P markets are peer-to-peer markets where the creator takes a position on one side (YES or NO) with a specified cap. This script demonstrates how to create a P2P market.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from '@pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+
+async function main() {
+  // Initialize client with private key
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+
+  // Market parameters
+  const question = 'Will I get 1 million dollars by the end of 2025';
+  const side = 'yes'; // 'yes' or 'no'
+  const initialAmount = 1_000_000n; // 1 USDC (6 decimals)
+  const creatorSideCap = 5_000_000n; // 5 USDC max for creator's side
+  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
+  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
+
+  // Create P2P market
+  const result = await client.createP2PMarketGeneral({
+    question,
+    initialAmount,
+    side,
+    creatorSideCap,
+    endTime,
+    collateralTokenMint: collateralMint,
+  });
+
+  console.log('P2P market created successfully!');
+  console.log('Signature:', result.signature);
+  console.log('Market Address:', result.market);
+  console.log('Yes Token Mint:', result.yesTokenMint);
+  console.log('No Token Mint:', result.noTokenMint);
+}
+
+main().catch(console.error);
+```
+
+**Key Points for P2P Markets:**
+- The creator takes a position on one side (YES or NO) with an initial amount
+- `creatorSideCap` defines the maximum amount the creator is willing to bet on their chosen side
+- Other users can take the opposite position
+- Use `client.createP2PMarketGeneral()` for P2P markets
+
+**Comparison: V2 AMM vs P2P Markets**
+
+| Feature | V2 AMM Market | P2P Market |
+|---------|---------------|---------------|
+| Market Type | Automated Market Maker | Peer-to-Peer |
+| Creator Position | No position (provides liquidity) | Takes YES or NO position |
+| Initial Liquidity | Split equally between YES/NO | Goes to creator's chosen side |
+| SDK Method | `client.market.createMarket()` | `client.createP2PMarketGeneral()` |
+| Side Selection | N/A | Required (yes/no) |
+| Creator Cap | N/A | Required (`creatorSideCap`) |
+| Use Case | Traditional prediction markets | Targeted position markets |
+
+## How to Get Refund Initial Liquidity
+
+If a market cannot be resolved or becomes unresolvable, the market creator can claim a refund of their initial liquidity. This section provides complete working scripts for claiming refunds from both V2 AMM markets and P2P markets.
+
+> [!IMPORTANT]
+> Only the market creator can claim refunds, and the market must meet specific conditions (such as being unresolvable or past a buffer period).
+
+### Claiming Refund for V2 AMM Market
+
+For V2 AMM markets, the creator who provided the initial liquidity can claim a refund if the market is deemed unresolvable. This script demonstrates the refund process for V2 markets.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from '@pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+const MARKET_ADDRESS = 'YourMarketAddressHere';
+
+async function main() {
+  // Initialize client with private key
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+  const market = new PublicKey(MARKET_ADDRESS);
+
+  // Claim refund for unresolvable market
+  const result = await client.claimMarketRefund(market);
+
+  console.log('Refund claimed successfully!');
+  console.log('Signature:', result.signature);
+}
+
+main().catch(console.error);
+```
+
+**Key Points for V2 Market Refunds:**
+- Only the market creator can claim a refund
+- The market must be unresolvable
+- Uses `client.claimMarketRefund()` method
+
+### Claiming Refund for P2P Market
+
+For P2P markets, creators can claim refunds with additional checks including buffer period validation. This script demonstrates the complete refund process for P2P markets with detailed error handling.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from '@pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+const MARKET_ADDRESS = 'YourMarketAddressHere';
+
+async function main() {
+  // Initialize client with private key
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+  const market = new PublicKey(MARKET_ADDRESS);
+
+  // Claim P2P market refund
+  // Note: The SDK handles all PDA derivations and account validations internally
+  const result = await client.claimP2PMarketRefund(market);
+
+  console.log('P2P refund claimed successfully!');
+  console.log('Signature:', result.signature);
+}
+
+main().catch(console.error);
+```
+
+**Key Points for P2P Market Refunds:**
+- Only the market creator can claim a refund
+- Must wait for the buffer period to pass before claiming
+- Uses `client.claimP2PMarketRefund()` for simplified refund claiming
+- SDK handles creator validation and token program detection automatically
+
+**Common Refund Errors:**
+
+| Error | Description | Solution |
+|-------|-------------|----------|
+| `BufferPeriodNotPassed` | The required waiting period hasn't elapsed | Wait until the buffer period passes before retrying |
+| `Signer is not the creator` | The wallet attempting the refund is not the market creator | Use the creator's wallet to claim the refund |
+| `Market account not found` | Invalid market address provided | Verify the market address is correct |
+| `Redemption module not available` | No wallet/signer configured in the client | Initialize PNPClient with a valid private key |
+
+**Comparison: V2 AMM vs P2P Refund Process**
+
+| Feature | V2 AMM Market Refund | P2P Market Refund |
+|---------|----------------------|----------------------|
+| SDK Method | `client.claimMarketRefund()` | `client.redemption.creatorRefundV3()` |
+| Buffer Period | May apply | Required waiting period |
+| Creator Validation | Automatic | Explicit check in script |
+| Token Program Support | Standard SPL Token | Both SPL Token and Token-2022 |
+| Error Details | Basic error messages | Advanced error parsing with codes |
+| Complexity | Simple, single method call | More complex, requires PDA derivation |
+
+## How to Trade
+
+Once markets are created, users can trade by buying or selling outcome tokens (YES/NO). This section provides simple examples for trading on both V2 AMM and P2P markets.
+
+### Trading on V2 AMM Markets
+
+V2 AMM markets allow you to buy YES or NO tokens using USDC as collateral. The AMM automatically determines the price based on the current liquidity pools.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from '@pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+const MARKET_ADDRESS = 'YourMarketAddressHere';
+
+async function main() {
+  // Initialize client with private key
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+  const marketPublicKey = new PublicKey(MARKET_ADDRESS);
+
+  // Buy YES tokens with 1 USDC
+  const buyResult = await client.trading.buyTokensUsdc({
+    market: marketPublicKey,
+    buyYesToken: true,  // true for YES, false for NO
+    amountUsdc: 1,      // Amount in USDC
+  });
+
+  console.log('Trade successful!');
+  console.log('Signature:', buyResult.signature);
+  console.log('Tokens received:', buyResult.tokensReceived);
+}
+
+main().catch(console.error);
+```
+
+**Key Points for V2 AMM Trading:**
+- Use `client.trading.buyTokensUsdc()` to buy outcome tokens
+- Set `buyYesToken: true` for YES tokens, `false` for NO tokens
+- Amount is specified in USDC (e.g., `1` = 1 USDC)
+- The AMM automatically calculates token price based on liquidity
+
+### Trading on P2P Markets
+
+P2P markets work differently - you can fetch available markets and trade directly with the market creator or other participants.
+
+#### Fetching Available P2P Markets
+
+```typescript
+import { PNPClient } from '@pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+
+async function main() {
+  // Initialize read-only client (no private key needed)
+  const client = new PNPClient(RPC_URL);
+  
+  // Fetch all P2P market addresses
+  const marketAddresses = await client.fetchV3MarketAddresses();
+  
+  console.log(`Found ${marketAddresses.length} P2P markets:`);
+  marketAddresses.forEach((address, index) => {
+    console.log(`${index + 1}. ${address}`);
+  });
+}
+
+main().catch(console.error);
+```
+
+#### Trading on P2P Markets
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from '@pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+const MARKET_ADDRESS = 'YourP2PMarketAddressHere';
+
+async function main() {
+  // Initialize client with private key
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+  const market = new PublicKey(MARKET_ADDRESS);
+
+  // Buy tokens on P2P market
+  const result = await client.tradeP2PMarket({
+    market,
+    side: 'yes',  // 'yes' or 'no'
+    amount: 1_000_000n,  // Amount in base units (e.g., 1 USDC with 6 decimals)
+  });
+
+  console.log('P2P trade successful!');
+  console.log('Signature:', result.signature);
+}
+
+main().catch(console.error);
+```
+
+**Key Points for P2P Market Trading:**
+- Use `client.fetchV3MarketAddresses()` to get all available P2P markets (no auth required)
+- Use `client.tradeP2PMarket()` to execute trades
+- Specify `side` as `'yes'` or `'no'`
+- Amount is in base units (for USDC: 1_000_000 = 1 USDC)
+
+**Comparison: V2 AMM vs P2P Trading**
+
+| Feature | V2 AMM Market | P2P Market |
+|---------|---------------|------------|
+| Trading Method | `client.trading.buyTokensUsdc()` | `client.tradeP2PMarket()` |
+| Price Discovery | Automated via AMM | Direct peer-to-peer |
+| Liquidity | Pool-based | Creator/participant-based |
+| Amount Format | USDC amount (e.g., `1` for 1 USDC) | Base units (e.g., `1_000_000n` for 1 USDC) |
+| Market Discovery | Via `client.fetchMarkets()` | Via `client.fetchV3MarketAddresses()` |
+
+
+
+
 
 ## API Reference
 
