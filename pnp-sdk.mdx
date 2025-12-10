@@ -24,6 +24,7 @@ description: "Client libraries for integrating with PNP Exchange"
 - [How to Trade](#how-to-trade)
   - [Trading on V2 AMM Markets](#trading-on-v2-amm-markets)
   - [Trading on P2P Markets](#trading-on-p2p-markets)
+- [How to Redeem Winnings](#how-to-redeem-winnings)
 - [API Reference](#api-reference)
   - [Core Client](#core-client)
   - [Main SDK Methods](#main-sdk-methods)
@@ -551,9 +552,55 @@ main().catch(console.error);
 | Amount Format | USDC amount (e.g., `1` for 1 USDC) | Base units (e.g., `1_000_000n` for 1 USDC) |
 | Market Discovery | Via `client.fetchMarkets()` | Via `client.fetchV3MarketAddresses()` |
 
+## How to Redeem Winnings
 
+After a market has been resolved, users holding winning positions (YES or NO tokens) can redeem them for the collateral asset (e.g., USDC).
 
+### Redeeming from Resolved Markets
 
+This script demonstrates how to check if a market is resolved and redeem winning positions.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from '@pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+const MARKET_ADDRESS = 'YourMarketAddressHere';
+
+async function main() {
+  // Initialize client with private key
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+  const market = new PublicKey(MARKET_ADDRESS);
+
+  // Check market status
+  const { account: marketAccount } = await client.fetchMarket(market);
+  
+  if (!marketAccount.resolved) {
+    console.log('Market is not yet resolved. Cannot redeem position.');
+    return;
+  }
+  
+  console.log('Market is resolved!');
+  console.log('Winning Token ID:', marketAccount.winning_token_id);
+
+  // Redeem winning position
+  // This works for both V2 AMM and P2P markets
+  const result = await client.redeemPosition(market);
+
+  console.log('Position redeemed successfully!');
+  console.log('Signature:', result.signature);
+}
+
+main().catch(console.error);
+```
+
+**Key Points for Redemption:**
+- Market must be resolved (`marketAccount.resolved === true`)
+- You must hold the winning token (YES or NO)
+- `client.redeemPosition()` handles the complexity of burning tokens and transferring collateral
+- Works for both V2 AMM and P2P markets
 
 ## API Reference
 
@@ -1123,94 +1170,6 @@ async function executeTradeExample() {
 executeTradeExample().catch(console.error);
 ```
 
-### Redeeming Positions
-
-After a market has been resolved, you can redeem your winning position tokens for the collateral.
-
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '../src';
-
-// Configuration
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const PRIVATE_KEY = [...]; // Your private key
-const MARKET_ADDRESS = '7pDJi7pVZMSCZY97QLcCLc7AQrJW9g2GVBcoiPE8PtuZ';
-
-async function redeemPositionExample() {
-  // Initialize client with private key
-  const client = new PNPClient(RPC_URL, PRIVATE_KEY);
-
-  const market = new PublicKey(MARKET_ADDRESS);
-  
-  try {
-    // First check if the market is resolved
-    const { account: marketAccount } = await client.fetchMarket(market);
-    
-    if (!marketAccount.resolved) {
-      console.log('Market is not yet resolved. Cannot redeem position.');
-      return;
-    }
-    
-    console.log('Market status:', { 
-      resolved: marketAccount.resolved,
-      winningToken: marketAccount.winning_token_id 
-    });
-
-    // All required token accounts and PDAs are derived automatically
-    const result = await client.redeemPosition(market);
-    console.log('✅ Position redeemed successfully!');
-    console.log('Transaction signature:', result.signature);
-  } catch (error) {
-    console.error('Error redeeming position:', error);
-    
-    // Check for specific errors
-    if (error.message?.includes('not yet resolved')) {
-      console.log('The market has not been resolved yet.');
-    } else if (error.message?.includes('invalid token account')) {
-      console.log('You may not have the winning token in your wallet.');
-    }
-  }
-}
-
-redeemPositionExample().catch(console.error);
-```
-
-### Claiming Creator Refund
-
-Market creators can claim a refund for markets that are not resolvable.
-
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '../src';
-
-// Configuration
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const PRIVATE_KEY = [...]; // Market creator's private key
-const MARKET_ADDRESS = 'BgXHNrCuAhi3Dv5KpSybTzDbRgVBeEKEwDAwGhQSEpAL';
-
-async function claimRefundExample() {
-  // Initialize client with market creator's private key
-  const client = new PNPClient(RPC_URL, PRIVATE_KEY);
-
-  const market = new PublicKey(MARKET_ADDRESS);
-  
-  try {
-    const result = await client.claimMarketRefund(market);
-    console.log('✅ Creator refund claimed successfully!');
-    console.log('Transaction signature:', result.signature);
-  } catch (error) {
-    console.error('Error claiming creator refund:', error);
-    
-    // Check for specific errors
-    if (error.message?.includes('not eligible')) {
-      console.log('This market is not eligible for creator refund.');
-      console.log('Market must be not resolvable and you must be the creator.');
-    }
-  }
-}
-
-claimRefundExample().catch(console.error);
-```
 
 ### Fetching Settlement Criteria
 
