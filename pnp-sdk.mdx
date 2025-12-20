@@ -5,12 +5,6 @@ description: "Client libraries for integrating with PNP Exchange"
 # PnP SDK Documentation
 
 ## Table of Contents
-- [CLI Usage](#cli-usage)
-  - [Environment Variables](#environment-variables)
-  - [Commands](#commands)
-    - [Create a New Market](#create-a-new-market)
-    - [Trading](#trading)
-    - [Market Information](#market-information)
 - [Overview](#overview)
   - [Features](#features)
   - [Installation](#installation)
@@ -21,6 +15,9 @@ description: "Client libraries for integrating with PNP Exchange"
 - [How to Get Refund Initial Liquidity](#how-to-get-refund-initial-liquidity)
   - [Claiming Refund for V2 AMM Market](#claiming-refund-for-v2-amm-market)
   - [Claiming Refund for P2P Market](#claiming-refund-for-p2p-market)
+- [How to Fetch Market Addresses](#how-to-fetch-market-addresses)
+  - [Fetching V2 Market Addresses](#fetching-v2-market-addresses)
+  - [Fetching P2P Market Addresses](#fetching-p2p-market-addresses)
 - [How to Trade](#how-to-trade)
   - [Trading on V2 AMM Markets](#trading-on-v2-amm-markets)
   - [Trading on P2P Markets](#trading-on-p2p-markets)
@@ -38,102 +35,16 @@ description: "Client libraries for integrating with PNP Exchange"
   - [Redeeming Positions](#redeeming-positions)
   - [Fetching Settlement Criteria](#fetching-settlement-criteria)
   - [Claiming Creator Refund](#claiming-creator-refund)
+- [CLI Usage](#cli-usage)
+  - [Environment Variables](#environment-variables)
+  - [Commands](#commands)
+    - [Create a New Market](#create-a-new-market)
+    - [Trading](#trading)
+    - [Market Information](#market-information)
 - [Best Practices](#best-practices)
 - [FAQ](#frequently-asked-questions)
 - [Contributing](#contributing)
 - [Changelog](#changelog)
-
-## CLI Usage
-
-The PNP CLI provides a convenient way to interact with prediction markets. Below are the available commands and their usage.
-
-### Environment Variables
-
-```bash
-# Required: Solana RPC endpoint
-RPC_URL=https://api.devnet.solana.com
-
-# Required: Wallet configuration (choose one)
-WALLET_SECRET_ARRAY=[1,2,3,...]  # Array of numbers
-WALLET_BS58=your_base58_private_key
-WALLET_FILE=/path/to/wallet.json
-
-# Optional: Path to IDL file
-PNP_IDL_PATH=./path/to/idl.json
-```
-
-### Commands
-
-#### Create a New Market
-```bash
-pnp create market "<question>" [--liquidity <lamports>] [--end <iso|days>]
-```
-
-**Examples:**
-```bash
-# Create market with default liquidity and end time (30 days from now)
-pnp create market "Will BTC reach $100K by 2025?"
-
-# Create market with custom liquidity (in lamports)
-pnp create market "Will ETH reach $10K?" --liquidity 1000000000
-
-# Create market with specific end date (ISO format or days from now)
-pnp create market "Will SOL reach $500?" --end "2025-12-31T23:59:59Z"
-pnp create market "Will DOT reach $100?" --end 14  # 14 days from now
-```
-
-#### Trading
-```bash
-# Buy tokens with USDC
-pnp trade <marketId> buy <YES|NO> <amount_usdc>
-
-# Sell tokens for USDC
-pnp trade <marketId> sell <YES|NO> <amount_base_units>
-
-# Check token balances
-pnp trade <marketId> balance
-
-# View current market prices
-pnp trade <marketId> prices
-```
-
-**Examples:**
-```bash
-# Buy $20 worth of YES tokens
-pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd buy YES 20
-
-# Sell 10.5 NO tokens
-pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd sell NO 10.5
-
-# Check balances
-pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd balance
-```
-
-#### Market Information
-```bash
-# Get market status
-pnp status <marketId>
-
-# List all available markets
-pnp fetchMarkets
-
-# Get settlement criteria from proxy server
-pnp settlementCritera <marketId>
-```
-
-The `settlementCritera` command prints only the settlement criteria JSON returned by the proxy for the provided `<marketId>`.
-
-**Examples:**
-```bash
-# Check if a market can be resolved or is settled
-pnp status 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd
-
-# List all available markets
-pnp fetchMarkets
-
-# Fetch settlement criteria for a market via proxy
-pnp settlementCritera H6juzjuc6oqMFos8svRE54WKNmBwVK7MyTyAaVUES62T
-```
 
 ## Overview
 
@@ -161,16 +72,16 @@ The PnP SDK is a TypeScript library for interacting with Solana-based prediction
 ### Installation
 
 ```bash
-npm install @pnp-sdk
+npm install pnp-sdk
 # or
-yarn add @pnp-sdk
+yarn add pnp-sdk
 ```
 
 ### Quick Start
 
 1. Install the package:
    ```bash
-   npm install @pnp-sdk
+   npm install pnp-sdk
    ```
 
 2. Import the SDK - Two methods are supported:
@@ -178,9 +89,7 @@ yarn add @pnp-sdk
    **Method 1: ESM Direct Import (Recommended)**
    ```typescript
    // For TypeScript/ES modules
-   import { PNPClient } from '@pnp-sdk';
-   // Or when developing locally
-   import { PNPClient } from '../src';
+   import { PNPClient } from 'pnp-sdk';
    ```
 
    **Method 2: CommonJS Require (For compatibility)**
@@ -188,14 +97,14 @@ yarn add @pnp-sdk
    // For CommonJS environments or when using the built package
    import { createRequire } from 'module';
    const require = createRequire(import.meta.url);
-   const { PNPClient } = require('@pnp-sdk');
+   const { PNPClient } = require('pnp-sdk');
    // Or when developing locally
    const { PNPClient } = require('../dist/index.cjs');
    ```
 
 3. Initialize the client:
    ```typescript
-   import { PNPClient } from '../src';
+   import { PNPClient } from 'pnp-sdk';
    import { PublicKey } from '@solana/web3.js';
    
    // Initialize with RPC URL and private key (if write operations are needed)
@@ -241,7 +150,7 @@ V2 markets use an AMM model where you provide initial liquidity that gets split 
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '@pnp-sdk';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -284,7 +193,7 @@ P2P markets are peer-to-peer markets where the creator takes a position on one s
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '@pnp-sdk';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -353,7 +262,7 @@ For V2 AMM markets, the creator who provided the initial liquidity can claim a r
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '@pnp-sdk';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -386,7 +295,7 @@ For P2P markets, creators can claim refunds with additional checks including buf
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '@pnp-sdk';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -435,6 +344,58 @@ main().catch(console.error);
 | Error Details | Basic error messages | Advanced error parsing with codes |
 | Complexity | Simple, single method call | More complex, requires PDA derivation |
 
+## How to Fetch Market Addresses
+
+Before trading, you may want to fetch the addresses of available markets. This section provides scripts to fetch both V2 AMM and P2P market addresses.
+
+### Fetching V2 Market Addresses
+
+This script demonstrates how to fetch V2 market addresses from the proxy server.
+
+```typescript
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+
+async function main() {
+  // Initialize the client
+  const client = new PNPClient(RPC_URL);
+  
+  // Fetch market addresses from proxy
+  const addresses = await client.fetchMarketAddresses();
+
+  console.log(`Found ${addresses.length} V2 markets:`);
+  addresses.forEach((addr) => console.log(addr));
+}
+
+main().catch(console.error);
+```
+
+### Fetching P2P Market Addresses
+
+This script demonstrates how to fetch the list of available P2P market addresses.
+
+```typescript
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+
+async function main() {
+  // Initialize client
+  const client = new PNPClient(RPC_URL);
+  
+  // Fetch P2P market addresses
+  const marketAddresses = await client.fetchV3MarketAddresses();
+  
+  console.log(`Found ${marketAddresses.length} P2P markets:`);
+  marketAddresses.forEach((address) => console.log(address));
+}
+
+main().catch(console.error);
+```
+
 ## How to Trade
 
 Once markets are created, users can trade by buying or selling outcome tokens (YES/NO). This section provides simple examples for trading on both V2 AMM and P2P markets.
@@ -445,7 +406,7 @@ V2 AMM markets allow you to buy YES or NO tokens using USDC as collateral. The A
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '@pnp-sdk';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -485,7 +446,7 @@ P2P markets work differently - you can fetch available markets and trade directl
 #### Fetching Available P2P Markets
 
 ```typescript
-import { PNPClient } from '@pnp-sdk';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -510,7 +471,7 @@ main().catch(console.error);
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '@pnp-sdk';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -562,7 +523,7 @@ This script demonstrates how to check if a market is resolved and redeem winning
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '@pnp-sdk';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -1018,7 +979,7 @@ This example demonstrates how to create a new prediction market using the SDK.
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '../src';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -1105,7 +1066,7 @@ The trading module allows you to buy and sell YES/NO outcome tokens in a market.
 
 ```typescript
 import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from '../src';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -1176,7 +1137,7 @@ executeTradeExample().catch(console.error);
 You can fetch settlement criteria from the proxy server to check if a market is resolvable.
 
 ```typescript
-import { PNPClient } from '../src';
+import { PNPClient } from 'pnp-sdk';
 
 // Configuration
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -1217,7 +1178,7 @@ fetchCriteriaExample().catch(console.error);
 This example shows how to gather all available information about a market from both on-chain data and the proxy server, similar to what's used in the `market-info.ts` script.
 
 ```typescript
-import { PNPClient } from '../src';
+import { PNPClient } from 'pnp-sdk';
 import { PublicKey } from '@solana/web3.js';
 
 // Configuration
@@ -1308,6 +1269,98 @@ async function getComprehensiveMarketInfo(marketId: string) {
 }
 
 getComprehensiveMarketInfo(MARKET_ADDRESS).catch(console.error);
+```
+
+## CLI Usage
+
+The PNP CLI provides a convenient way to interact with prediction markets. Below are the available commands and their usage.
+
+### Environment Variables
+
+```bash
+# Required: Solana RPC endpoint
+RPC_URL=https://api.devnet.solana.com
+
+# Required: Wallet configuration (choose one)
+WALLET_SECRET_ARRAY=[1,2,3,...]  # Array of numbers
+WALLET_BS58=your_base58_private_key
+WALLET_FILE=/path/to/wallet.json
+
+# Optional: Path to IDL file
+PNP_IDL_PATH=./path/to/idl.json
+```
+
+### Commands
+
+#### Create a New Market
+```bash
+pnp create market "<question>" [--liquidity <lamports>] [--end <iso|days>]
+```
+
+**Examples:**
+```bash
+# Create market with default liquidity and end time (30 days from now)
+pnp create market "Will BTC reach $100K by 2025?"
+
+# Create market with custom liquidity (in lamports)
+pnp create market "Will ETH reach $10K?" --liquidity 1000000000
+
+# Create market with specific end date (ISO format or days from now)
+pnp create market "Will SOL reach $500?" --end "2025-12-31T23:59:59Z"
+pnp create market "Will DOT reach $100?" --end 14  # 14 days from now
+```
+
+#### Trading
+```bash
+# Buy tokens with USDC
+pnp trade <marketId> buy <YES|NO> <amount_usdc>
+
+# Sell tokens for USDC
+pnp trade <marketId> sell <YES|NO> <amount_base_units>
+
+# Check token balances
+pnp trade <marketId> balance
+
+# View current market prices
+pnp trade <marketId> prices
+```
+
+**Examples:**
+```bash
+# Buy $20 worth of YES tokens
+pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd buy YES 20
+
+# Sell 10.5 NO tokens
+pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd sell NO 10.5
+
+# Check balances
+pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd balance
+```
+
+#### Market Information
+```bash
+# Get market status
+pnp status <marketId>
+
+# List all available markets
+pnp fetchMarkets
+
+# Get settlement criteria from proxy server
+pnp settlementCritera <marketId>
+```
+
+The `settlementCritera` command prints only the settlement criteria JSON returned by the proxy for the provided `<marketId>`.
+
+**Examples:**
+```bash
+# Check if a market can be resolved or is settled
+pnp status 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd
+
+# List all available markets
+pnp fetchMarkets
+
+# Fetch settlement criteria for a market via proxy
+pnp settlementCritera H6juzjuc6oqMFos8svRE54WKNmBwVK7MyTyAaVUES62T
 ```
 
 ## Best Practices
