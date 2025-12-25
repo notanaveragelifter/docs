@@ -12,6 +12,8 @@ description: "Client libraries for integrating with PNP Exchange"
 - [How to Create a Market](#how-to-create-a-market)
   - [Creating a V2 AMM Market](#creating-a-v2-amm-market)
   - [Creating a P2P Market](#creating-a-p2p-market)
+  - [Creating a Twitter Market](#creating-a-twitter-market)
+  - [Creating a YouTube Market](#creating-a-youtube-market)
 - [How to Get Refund Initial Liquidity](#how-to-get-refund-initial-liquidity)
   - [Claiming Refund for V2 AMM Market](#claiming-refund-for-v2-amm-market)
   - [Claiming Refund for P2P Market](#claiming-refund-for-p2p-market)
@@ -55,7 +57,7 @@ The PnP SDK is a TypeScript library for interacting with Solana-based prediction
 - Create and manage prediction markets on Solana
 - Trade YES/NO tokens
 - Redeem positions for resolved markets
-- Claim creator refunds for unresolve markets
+- Claim creator refunds for unresolved markets
 - Interact with on-chain market data
 - Fetch settlement criteria from proxy server
 - TypeScript-first development experience
@@ -249,6 +251,182 @@ main().catch(console.error);
 | Creator Cap | N/A | Required (`creatorSideCap`) |
 | Use Case | Traditional prediction markets | Targeted position markets |
 
+### Creating a Twitter Market
+
+Twitter markets are linked to specific tweets. The SDK can automatically detect tweet IDs from URLs and fetch settlement criteria.
+
+#### Creating a V2 Twitter Market
+
+This script demonstrates how to create a V2 AMM market linked to a Twitter post.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+
+async function main() {
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+
+  // Market parameters
+  const question = 'Will this tweet cross 5000 replies?';
+  const tweetUrl = 'https://x.com/0xJeff/status/2003733328093151716';
+  const initialLiquidity = 1_000_000n; // 1 USDC (6 decimals)
+  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
+  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
+
+  // Create Twitter-linked V2 market
+  const result = await client.createMarketTwitter({
+    question,
+    tweetUrl,
+    initialLiquidity,
+    endTime,
+    collateralTokenMint: collateralMint,
+  });
+
+  console.log('Twitter V2 market created successfully!');
+  console.log('Signature:', result.signature);
+  console.log('Market Address:', result.market);
+}
+
+main().catch(console.error);
+```
+
+#### Creating a P2P Twitter Market
+
+This script demonstrates how to create a P2P market linked to a Twitter post.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+
+async function main() {
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+
+  // Market parameters
+  const question = 'Will this tweet cross 500 replies?';
+  const tweetUrl = 'https://twitter.com/cuomo/status/1234567890';
+  const side = 'yes'; // 'yes' or 'no'
+  const initialAmount = 1_000_000n; // 1 USDC (6 decimals)
+  const creatorSideCap = 5_000_000n; // 5 USDC max for creator's side
+  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
+  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
+
+  // Create Twitter-linked P2P market
+  const result = await client.createP2PMarketTwitter({
+    question,
+    tweetUrl,
+    initialAmount,
+    side,
+    creatorSideCap,
+    endTime,
+    collateralTokenMint: collateralMint,
+  });
+
+  console.log('Twitter P2P market created successfully!');
+  console.log('Signature:', result.signature);
+  console.log('Market Address:', result.market);
+  console.log('Yes Token Mint:', result.yesTokenMint);
+  console.log('No Token Mint:', result.noTokenMint);
+}
+
+main().catch(console.error);
+```
+
+### Creating a YouTube Market
+
+YouTube markets are linked to specific videos. The SDK handles YouTube URL parsing and settlement integration.
+
+#### Creating a V2 YouTube Market
+
+This script demonstrates how to create a V2 AMM market linked to a YouTube video.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+
+async function main() {
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+
+  // Market parameters
+  const question = 'Will this video cross 1B views?';
+  const youtubeUrl = 'https://youtu.be/rNv8K8AYGi8';
+  const initialLiquidity = 1_000_000n; // 1 USDC (6 decimals)
+  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
+  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
+
+  // Create YouTube-linked V2 market
+  const result = await client.createMarketYoutube({
+    question,
+    youtubeUrl,
+    initialLiquidity,
+    endTime,
+    collateralTokenMint: collateralMint,
+  });
+
+  console.log('YouTube V2 market created successfully!');
+  console.log('Signature:', result.signature);
+  console.log('Market Address:', result.market);
+}
+
+main().catch(console.error);
+```
+
+#### Creating a P2P YouTube Market
+
+This script demonstrates how to create a P2P market linked to a YouTube video.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+
+async function main() {
+  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+
+  // Market parameters
+  const question = 'Will this video cross 40M views by the end of 2025?';
+  const youtubeUrl = 'https://youtube.com/watch?v=abcd1234';
+  const side = 'yes'; // 'yes' or 'no'
+  const initialAmount = 1_000_000n; // 1 USDC (6 decimals)
+  const creatorSideCap = 5_000_000n; // 5 USDC max for creator's side
+  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
+  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
+
+  // Create YouTube-linked P2P market
+  const result = await client.createP2PMarketYoutube({
+    question,
+    youtubeUrl,
+    initialAmount,
+    side,
+    creatorSideCap,
+    endTime,
+    collateralTokenMint: collateralMint,
+  });
+
+  console.log('YouTube P2P market created successfully!');
+  console.log('Signature:', result.signature);
+  console.log('Market Address:', result.market);
+  console.log('Yes Token Mint:', result.yesTokenMint);
+  console.log('No Token Mint:', result.noTokenMint);
+}
+
+main().catch(console.error);
+```
+
 ## How to Get Refund Initial Liquidity
 
 If a market cannot be resolved or becomes unresolvable, the market creator can claim a refund of their initial liquidity. This section provides complete working scripts for claiming refunds from both V2 AMM markets and P2P markets.
@@ -337,7 +515,7 @@ main().catch(console.error);
 
 | Feature | V2 AMM Market Refund | P2P Market Refund |
 |---------|----------------------|----------------------|
-| SDK Method | `client.claimMarketRefund()` | `client.redemption.creatorRefundV3()` |
+| SDK Method | `client.claimMarketRefund()` | `client.claimP2PMarketRefund()` |
 | Buffer Period | May apply | Required waiting period |
 | Creator Validation | Automatic | Explicit check in script |
 | Token Program Support | Standard SPL Token | Both SPL Token and Token-2022 |
@@ -1346,10 +1524,10 @@ pnp status <marketId>
 pnp fetchMarkets
 
 # Get settlement criteria from proxy server
-pnp settlementCritera <marketId>
+pnp settlementCriteria <marketId>
 ```
 
-The `settlementCritera` command prints only the settlement criteria JSON returned by the proxy for the provided `<marketId>`.
+The `settlementCriteria` command prints only the settlement criteria JSON returned by the proxy for the provided `<marketId>`.
 
 **Examples:**
 ```bash
@@ -1360,7 +1538,7 @@ pnp status 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd
 pnp fetchMarkets
 
 # Fetch settlement criteria for a market via proxy
-pnp settlementCritera H6juzjuc6oqMFos8svRE54WKNmBwVK7MyTyAaVUES62T
+pnp settlementCriteria H6juzjuc6oqMFos8svRE54WKNmBwVK7MyTyAaVUES62T
 ```
 
 ## Best Practices
