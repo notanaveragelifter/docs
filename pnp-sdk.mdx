@@ -14,6 +14,13 @@ description: "Client libraries for integrating with PNP Exchange"
   - [Creating a P2P Market](#creating-a-p2p-market)
   - [Creating a Twitter Market](#creating-a-twitter-market)
   - [Creating a YouTube Market](#creating-a-youtube-market)
+  - [Creating a Market with Custom Oracle](#creating-a-market-with-custom-oracle)
+- [Custom Oracles](#custom-oracles)
+  - [Overview](#overview-1)
+  - [Key Benefits](#key-benefits)
+  - [Technical Architecture](#technical-architecture)
+  - [Workflow Lifecycle](#workflow-lifecycle)
+  - [Account Requirements](#account-requirements)
 - [How to Get Refund Initial Liquidity](#how-to-get-refund-initial-liquidity)
   - [Claiming Refund for V2 AMM Market](#claiming-refund-for-v2-amm-market)
   - [Claiming Refund for P2P Market](#claiming-refund-for-p2p-market)
@@ -339,7 +346,213 @@ async function main() {
 main().catch(console.error);
 ```
 
-### Creating a YouTube Market
+### Creating a Market with Custom Oracle
+
+Custom Oracles allow prediction market creators to bypass the global protocol oracle and assign a specific wallet or service to resolve their market.
+
+#### Overview
+
+By default, PNP markets are resolved by the protocol's global oracle. However, for specialized markets—private wagers, specific sports feeds, or DAO-governed outcomes—you can designate a Custom Oracle (also known as a Settler) at the time of creation.
+
+#### Example: Creating a Market with Custom Oracle
+
+```typescript
+const market = await client.createMarketWithCustomOracle({
+  question: "Will the Lakers win tonight?",
+  initialLiquidity: 100_000_000, // 100 USDC (6 decimals)
+  endTime: Math.floor(Date.now() / 1000) + 86400,
+  collateralMint: USDC_MINT,
+  settlerAddress: ORACLE_PUBLIC_KEY,
+  yesOddsBps: 7000, // Optional: Start market at $0.70 for YES
+});
+```
+
+## Custom Oracles
+
+Custom Oracles provide sovereign resolution for prediction markets, allowing creators to designate a specific address responsible for settling the market.
+
+### Key Benefits
+
+- **Sovereign Resolution**: Only the designated settler address can decide the outcome.
+- **Custom Price Bias**: Set initial "odds" (BPS) to create markets with a starting price other than 50/50.
+- **Immediate Resolvability**: The settler can toggle the market as "resolvable" at any time.
+
+### Technical Architecture
+
+When a market is created with a custom oracle, the protocol initializes two separate on-chain accounts:
+
+1.  **Market Account**: The standard V2 pool account storing liquidity and basic metadata.
+2.  **Market Extension (PDA)**: A unique account derived from the market's Global ID. This extension stores:
+    - `settler`: The address authorized to resolve the market.
+    - `yes_odds_bps`: The initial price bias (optional).
+
+**Derivation Seeds**: `["market_ext", global_id_le_bytes]`
+
+### Workflow Lifecycle
+
+#### 1. Market Creation
+
+Use `createMarketWithCustomOracle` to initialize the market. This handles the derivation and creation of both the Market and the Extension account.
+
+```typescript
+const market = await client.createMarketWithCustomOracle({
+  question: "Will the Lakers win tonight?",
+  initialLiquidity: 100_000_000, // 100 USDC (6 decimals)
+  endTime: Math.floor(Date.now() / 1000) + 86400,
+  collateralMint: USDC_MINT,
+  settlerAddress: ORACLE_PUBLIC_KEY,
+  yesOddsBps: 7000, // Optional: Start market at $0.70 for YES
+});
+```
+
+#### 2. Enabling Resolution
+
+Before a market can be settled, it must be marked as resolvable. For custom oracle markets, only the designated settler or a protocol admin can perform this action.
+
+```typescript
+await client.setMarketResolvable(marketAddress, true);
+```
+
+#### 3. Final Settlement
+
+Once the event is concluded and the market is resolvable, the settler calls `settleMarket` to distribute funds to the winners.
+
+```typescript
+await client.settleMarket({
+  market: marketAddress,
+  yesWinner: true, // YES wins, NO holders get $0
+});
+```
+
+### Account Requirements
+
+The SDK automatically handles the inclusion of the `MarketExtension` account for these operations. If you are building low-level instructions, ensure the following accounts are passed to `settleMarket`:
+
+| Account | Description |
+| :--- | :--- |
+| `market` | The Market PDA |
+| `marketExtension` | The Extension PDA (derived from global ID) |
+| `admin` | The Global Admin OR the designated Settler |
+| `creatorFeeTreasury` | Derived PDA for fee collection |
+
+### Full Script Example: Custom Oracle Market Operations
+
+This script demonstrates managing markets with custom oracles using high-level SDK methods.
+
+```typescript
+/**
+ * Devnet Script: Custom Oracle Market Operations
+ */
+
+import { PublicKey } from '@solana/web3.js';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { createRequire } from 'module';
+
+// Load .env from project root
+config({ path: resolve(import.meta.dirname, '../../.env') });
+
+const require = createRequire(import.meta.url);
+const { PNPClient } = require('../../dist/index.cjs');
+
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const DEFAULT_DEVNET_USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+/**
+ * High-level function to create a market with a custom oracle
+ */
+export async function createMarketWithCustomOracle(client: any, params: any) {
+    console.log('\n' + '─'.repeat(50));
+    console.log('STEP: Creating market with custom oracle');
+    console.log('─'.repeat(50));
+    console.log(' Creating market...');
+    const result = await client.createMarketWithCustomOracle(params);
+    console.log('✅ Market created!');
+    console.log(`  Market: ${result.market.toBase58()}`);
+    console.log(`  TX: ${result.signature}`);
+    return result.market;
+}
+
+/**
+ * High-level function to set market resolvable status
+ */
+export async function setResolvable(client: any, market: PublicKey, resolvable: boolean) {
+    console.log('\n' + '─'.repeat(50));
+    console.log(`STEP: Setting resolvable to ${resolvable}`);
+    console.log('─'.repeat(50));
+    console.log(' Enabling resolution...');
+    const result = await client.setMarketResolvable(market, resolvable);
+    console.log('✅ Market resolvable status updated!');
+    console.log(`  TX: ${result.signature}`);
+    return result;
+}
+
+/**
+ * High-level function to settle a market
+ */
+export async function settleMarket(client: any, market: PublicKey, yesWinner: boolean) {
+    console.log('\n' + '─'.repeat(50));
+    console.log(`STEP: Settling market (Winner: ${yesWinner ? 'YES' : 'NO'})`);
+    console.log('─'.repeat(50));
+    console.log(' Settle market...');
+    const result = await client.settleMarket({ market, yesWinner });
+    console.log('✅ Market settled successfully!');
+    console.log(`  TX: ${result.signature}`);
+    return result;
+}
+
+async function main() {
+    console.log('\n🧪 Custom Oracle Demo - Devnet\n');
+    console.log('═'.repeat(50));
+
+    const ORACLE_PRIVATE_KEY = process.env.DEVNET_PRIVATE_KEY || process.env.TEST_PRIVATE_KEY;
+    if (!ORACLE_PRIVATE_KEY) {
+        console.error(' Oracle private key not found in environment');
+        process.exit(1);
+    }
+
+    const secretKey = PNPClient.parseSecretKey(ORACLE_PRIVATE_KEY);
+    const client = new PNPClient(RPC_URL, secretKey);
+
+    const oracleWallet = client.signer!.publicKey;
+    const COLLATERAL_MINT = new PublicKey(process.env.DEVNET_COLLATERAL_MINT || DEFAULT_DEVNET_USDC);
+
+    // --- DEMO FLOW ---
+
+    // 1. Create
+    const market = await createMarketWithCustomOracle(client, {
+        question: `SDK Test: Full flow ${Date.now()}`,
+        initialLiquidity: BigInt(1_000_000),
+        endTime: BigInt(Math.floor(Date.now() / 1000) + 5), // 5 seconds from now
+        collateralMint: COLLATERAL_MINT,
+        settlerAddress: oracleWallet,
+    });
+
+    // 2. Set Resolvable (True)
+    await setResolvable(client, market, true);
+
+    // Wait for market to end
+    console.log('⏳ Waiting 10 seconds for market to end...');
+    await new Promise(r => setTimeout(r, 10000));
+
+    // 3. Settle (YES wins)
+    await settleMarket(client, market, true);
+
+    console.log('\n' + '═'.repeat(50));
+    console.log('✅ CUSTOM ORACLE FULL FLOW COMPLETED!');
+    console.log('═'.repeat(50));
+    console.log(`\n Market Explorer:`);
+    console.log(`  https://explorer.solana.com/address/${market.toBase58()}?cluster=devnet`);
+}
+
+main().catch((err) => {
+    console.error('\n Error:', err.message || err);
+    if (err.logs) {
+        console.error('Program logs:', err.logs);
+    }
+    process.exit(1);
+});
+```
 
 YouTube markets are linked to specific videos. The SDK handles YouTube URL parsing and settlement integration.
 
