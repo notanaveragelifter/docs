@@ -467,7 +467,7 @@ export async function createMarketWithCustomOracle(client: any, params: any) {
     console.log('─'.repeat(50));
     console.log(' Creating market...');
     const result = await client.createMarketWithCustomOracle(params);
-    console.log('✅ Market created!');
+    console.log(' Market created!');
     console.log(`  Market: ${result.market.toBase58()}`);
     console.log(`  TX: ${result.signature}`);
     return result.market;
@@ -482,7 +482,7 @@ export async function setResolvable(client: any, market: PublicKey, resolvable: 
     console.log('─'.repeat(50));
     console.log(' Enabling resolution...');
     const result = await client.setMarketResolvable(market, resolvable);
-    console.log('✅ Market resolvable status updated!');
+    console.log(' Market resolvable status updated!');
     console.log(`  TX: ${result.signature}`);
     return result;
 }
@@ -496,13 +496,13 @@ export async function settleMarket(client: any, market: PublicKey, yesWinner: bo
     console.log('─'.repeat(50));
     console.log(' Settle market...');
     const result = await client.settleMarket({ market, yesWinner });
-    console.log('✅ Market settled successfully!');
+    console.log(' Market settled successfully!');
     console.log(`  TX: ${result.signature}`);
     return result;
 }
 
 async function main() {
-    console.log('\n🧪 Custom Oracle Demo - Devnet\n');
+    console.log('\n Custom Oracle Demo - Devnet\n');
     console.log('═'.repeat(50));
 
     const ORACLE_PRIVATE_KEY = process.env.DEVNET_PRIVATE_KEY || process.env.TEST_PRIVATE_KEY;
@@ -539,7 +539,7 @@ async function main() {
     await settleMarket(client, market, true);
 
     console.log('\n' + '═'.repeat(50));
-    console.log('✅ CUSTOM ORACLE FULL FLOW COMPLETED!');
+    console.log(' CUSTOM ORACLE FULL FLOW COMPLETED!');
     console.log('═'.repeat(50));
     console.log(`\n Market Explorer:`);
     console.log(`  https://explorer.solana.com/address/${market.toBase58()}?cluster=devnet`);
