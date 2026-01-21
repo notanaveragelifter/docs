@@ -46,7 +46,8 @@
             "group": "$PNP Suite",
             "pages": [
               "pnp-sdk",
-              "pnp-agent"
+              "pnp-agent",
+              "kalshi-derivative"
             ]
           }
         ]

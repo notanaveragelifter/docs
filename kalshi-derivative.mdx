@@ -1,0 +1,154 @@
+---
+title: "2nd Derivative Kalshi Markets"
+description: "Build prediction markets on top of prediction markets — the meta-layer for information aggregation"
+icon: "layer-group"
+---
+
+<Note>
+**🚀 Coming Soon** — In partnership with **DFlow** and **Kalshi**
+</Note>
+
+# 2nd Derivative Kalshi Markets
+
+## The Thesis: Markets on Markets
+
+Prediction markets are the most efficient mechanism humanity has discovered for aggregating dispersed information into a single price signal. **Kalshi**, as the first CFTC-regulated prediction market exchange in the United States, has pioneered access to event contracts on everything from elections to economic indicators.
+
+But here's the insight that unlocks a new frontier: **the price trajectory of a prediction market is itself an event worth predicting.**
+
+Enter **2nd Derivative Markets** — prediction markets built *on top of* existing prediction markets.
+
+---
+
+## Why This Matters
+
+Traditional prediction markets answer: *"Will X happen?"*
+
+2nd Derivative markets answer far more nuanced questions:
+
+| Market Type | Example Question |
+| :--- | :--- |
+| **Momentum Markets** | "Will this Kalshi market's YES price ever cross 70%?" |
+| **Outcome Markets** | "Will this Kalshi market resolve to Option A?" |
+| **Volatility Markets** | "Will this market's price swing more than 20% in the next 7 days?" |
+| **Timing Markets** | "Will this market hit 90% confidence before Election Day?" |
+
+These aren't just derivative plays — they're **meta-information markets** that capture:
+
+- **Market sentiment trajectories** — How will conviction evolve over time?
+- **Informational cascade detection** — When will the market "figure it out"?
+- **Implied volatility of beliefs** — How uncertain is the market about its own uncertainty?
+
+---
+
+## The Information Theoretic Case
+
+Traditional finance has options, futures, and derivatives built on underlying assets. These instruments don't just speculate on price — they reveal hidden information about volatility, time preferences, and risk appetites.
+
+Prediction markets have lacked this derivative layer. Until now.
+
+By enabling markets on Kalshi contracts, PNP creates a **second-order price discovery mechanism**:
+
+```
+Layer 0: Real-world event (e.g., "Will inflation exceed 3%?")
+    ↓
+Layer 1: Kalshi market price (e.g., 62% YES)
+    ↓
+Layer 2: PNP derivative market (e.g., "Will Kalshi price hit 80%?")
+```
+
+Each layer extracts different information:
+- **Layer 1** aggregates beliefs about the underlying event
+- **Layer 2** aggregates beliefs about *how those beliefs will change*
+
+This is profound. Layer 2 markets can reveal:
+- When insiders expect news to break
+- Whether current prices reflect stable equilibrium or temporary noise
+- The market's confidence in its own accuracy
+
+---
+
+## Use Cases
+
+### 🎯 Hedging Kalshi Positions
+
+Hold a large YES position on a Kalshi contract? You can now hedge against temporary drawdowns by taking positions on PNP derivative markets. If you believe the market will eventually reach 80% but might dip first, you can express that view.
+
+### 📊 Trading the Narrative Arc
+
+Major events don't resolve overnight. Elections have debates, economic indicators have revisions, and markets move in waves. Derivative markets let you trade the *story* — not just the ending.
+
+### 🔮 Prediction Market Analytics
+
+Sophisticated traders can use Layer 2 prices as signals for Layer 1 positions. If the "Will this market hit 90%?" contract is trading at 70%, that tells you something about market structure that the base price alone cannot.
+
+### 🏛️ Institutional Interest
+
+For institutions restricted from directly trading on outcomes (due to regulatory or mandate constraints), derivative markets offer a compliant way to gain exposure to prediction market dynamics.
+
+---
+
+## How It Works on PNP
+
+Users can create two types of derivative markets on any Kalshi contract:
+
+### V2 AMM Markets
+Automated Market Maker pools with continuous liquidity. Ideal for longer-dated derivative markets where you want to enable trading from day one.
+
+```
+"Will the Kalshi 'Bitcoin $100K by March' market ever touch 75% YES?"
+```
+
+### P2P Markets
+Peer-to-peer wagers for specific, high-conviction bets between counterparties.
+
+```
+"I bet this Kalshi market resolves to NO before Feb 15."
+```
+
+Simply paste any Kalshi market URL, define your derivative question, and PNP handles the rest — including settlement verification through the Kalshi oracle feed.
+
+---
+
+## Powered by DFlow
+
+<Card title="DFlow Integration" icon="link">
+**DFlow** is pioneering decentralized, permissionless access to real-world market data — including Kalshi prediction market prices.
+
+Through DFlow's infrastructure, PNP gains:
+- **Real-time Kalshi price feeds** streamed on-chain
+- **Permissionless composability** — anyone can build on top of Kalshi data
+
+DFlow bridges the gap between centralized prediction market venues and on-chain DeFi, enabling a new generation of derivative instruments that were previously impossible.
+</Card>
+
+---
+
+## The Bigger Picture
+
+We're not just building another prediction market. We're building **infrastructure for recursive information markets**.
+
+Today it's Kalshi derivatives. Tomorrow it could be:
+- Polymarket derivative markets
+- PNP-on-PNP recursive markets
+- Cross-venue arbitrage markets
+
+The thesis is simple: **wherever there's a price signal, there's a derivative market waiting to be born.**
+
+---
+
+
+<CardGroup cols={2}>
+  <Card title="DFlow" icon="link" href="https://dflow.net">
+    Decentralized order flow infrastructure enabling on-chain access to real-world markets
+  </Card>
+  <Card title="Kalshi" icon="chart-line" href="https://kalshi.com">
+    The first CFTC-regulated prediction market exchange in the United States
+  </Card>
+</CardGroup>
+
+---
+
+<Info>
+**Want early access?** Join our [Discord](https://discord.gg/pnp) or follow [@predictandpump](https://x.com/predictandpump) for launch updates.
+</Info>
