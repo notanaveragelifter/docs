@@ -27,6 +27,7 @@ description: "Client libraries for integrating with PNP Exchange"
 - [How to Fetch Market Addresses](#how-to-fetch-market-addresses)
   - [Fetching V2 Market Addresses](#fetching-v2-market-addresses)
   - [Fetching P2P Market Addresses](#fetching-p2p-market-addresses)
+- [How to Get Market Prices & Multipliers](#how-to-get-market-prices--multipliers)
 - [How to Trade](#how-to-trade)
   - [Trading on V2 AMM Markets](#trading-on-v2-amm-markets)
   - [Trading on P2P Markets](#trading-on-p2p-markets)
@@ -66,6 +67,7 @@ The PnP SDK is a TypeScript library for interacting with Solana-based prediction
 - Redeem positions for resolved markets
 - Claim creator refunds for unresolved markets
 - Interact with on-chain market data
+- **Fetch real-time market prices & multipliers** (no wallet required)
 - Fetch settlement criteria from proxy server
 - TypeScript-first development experience
 - Comprehensive error handling
@@ -925,6 +927,96 @@ async function main() {
 main().catch(console.error);
 ```
 
+## How to Get Market Prices & Multipliers
+
+For V2 AMM markets, you can fetch real-time prices and multipliers without needing a wallet or private key. This is useful for displaying market data in UIs, calculating potential returns, or building analytics tools.
+
+### Getting V2 Market Price Data
+
+```typescript
+import { PNPClient } from 'pnp-sdk';
+
+// ✅ No private key needed - just RPC URL!
+const client = new PNPClient("https://api.devnet.solana.com");
+
+async function main() {
+  const marketAddress = "7AENtBCWx8..."; // Your V2 market address
+  
+  const priceData = await client.getMarketPriceV2(marketAddress);
+
+  console.log(`YES: $${priceData.yesPrice.toFixed(4)} (${priceData.yesMultiplier}x)`);
+  console.log(`NO:  $${priceData.noPrice.toFixed(4)} (${priceData.noMultiplier}x)`);
+}
+
+main().catch(console.error);
+```
+
+**Sample Output:**
+
+```json
+{
+  "marketReserves": 1.0,
+  "yesTokenSupply": 0.707106,
+  "noTokenSupply": 0.707106,
+  "yesPrice": 0.7071,
+  "noPrice": 0.7071,
+  "yesMultiplier": 2.0,
+  "noMultiplier": 2.0,
+  "marketReservesRaw": "1000000",
+  "yesTokenSupplyRaw": "707106",
+  "noTokenSupplyRaw": "707106"
+}
+```
+
+**Understanding the Response:**
+
+| Field | Description |
+|-------|-------------|
+| `yesPrice` | Current price of YES tokens (0-1 range, where 1 = $1) |
+| `noPrice` | Current price of NO tokens (0-1 range, where 1 = $1) |
+| `yesMultiplier` | Potential return multiplier if YES wins (e.g., 2x = double your money) |
+| `noMultiplier` | Potential return multiplier if NO wins |
+| `marketReserves` | Total collateral in the market (human-readable units) |
+| `yesTokenSupply` | Total YES tokens in circulation (human-readable units) |
+| `noTokenSupply` | Total NO tokens in circulation (human-readable units) |
+| `marketReservesRaw` | Total collateral in raw base units (e.g., lamports) |
+| `yesTokenSupplyRaw` | Total YES tokens in raw base units |
+| `noTokenSupplyRaw` | Total NO tokens in raw base units |
+
+**Key Points:**
+- No private key or wallet required - purely read-only operation
+- Prices are calculated from the AMM's constant product formula
+- Multipliers show the potential payout ratio (e.g., 2x means $1 bet wins $2)
+- Raw values are provided for precision when working with on-chain amounts
+- Works with any V2 AMM market address
+
+### Use Cases
+
+**Displaying Market Cards:**
+```typescript
+const priceData = await client.getMarketPriceV2(marketAddress);
+
+// Show implied probability (price = probability in prediction markets)
+const yesProb = (priceData.yesPrice * 100).toFixed(1);
+const noProb = (priceData.noPrice * 100).toFixed(1);
+
+console.log(`Market: Will BTC hit $200k?`);
+console.log(`YES: ${yesProb}% chance (${priceData.yesMultiplier.toFixed(2)}x payout)`);
+console.log(`NO:  ${noProb}% chance (${priceData.noMultiplier.toFixed(2)}x payout)`);
+```
+
+**Calculating Potential Returns:**
+```typescript
+const priceData = await client.getMarketPriceV2(marketAddress);
+const betAmount = 100; // $100 USDC
+
+const potentialYesWin = betAmount * priceData.yesMultiplier;
+const potentialNoWin = betAmount * priceData.noMultiplier;
+
+console.log(`If you bet $${betAmount} on YES and win: $${potentialYesWin.toFixed(2)}`);
+console.log(`If you bet $${betAmount} on NO and win: $${potentialNoWin.toFixed(2)}`);
+```
+
 ## How to Trade
 
 Once markets are created, users can trade by buying or selling outcome tokens (YES/NO). This section provides simple examples for trading on both V2 AMM and P2P markets.
@@ -1150,6 +1242,7 @@ The PNP SDK is organized into modules for different functionality areas:
    - `redeemPosition` - Redeem winning positions after market resolution
    - `claimMarketRefund` - Claim refund for unresolvable markets
    - `fetchMarket`, `fetchMarkets`, `fetchGlobalConfig` - Read-only data methods
+   - `getMarketPriceV2` - Get real-time prices & multipliers for V2 AMM markets
    - `fetchSettlementCriteria`, `getSettlementCriteria` - Proxy server integration
    - `fetchSettlementData`, `getSettlementData` - Get market settlement details
    - `fetchMarketAddresses` - Get all market addresses from proxy
@@ -1329,6 +1422,42 @@ try {
 }
 ```
 
+#### `getMarketPriceV2(market: string | PublicKey): Promise<MarketPriceV2Data>`
+
+Fetches real-time price and multiplier data for a V2 AMM market. This is a read-only operation that doesn't require a wallet or private key.
+
+**Parameters:**
+- `market`: string | PublicKey - The V2 market address (as string or PublicKey)
+
+**Returns:** Promise that resolves to a `MarketPriceV2Data` object containing:
+- `yesPrice`: number - Current YES token price (0-1 range)
+- `noPrice`: number - Current NO token price (0-1 range)
+- `yesMultiplier`: number - Potential return multiplier if YES wins
+- `noMultiplier`: number - Potential return multiplier if NO wins
+- `marketReserves`: number - Total collateral in human-readable units
+- `yesTokenSupply`: number - YES token supply in human-readable units
+- `noTokenSupply`: number - NO token supply in human-readable units
+- `marketReservesRaw`: string - Total collateral in raw base units
+- `yesTokenSupplyRaw`: string - YES token supply in raw base units
+- `noTokenSupplyRaw`: string - NO token supply in raw base units
+
+**Example:**
+```typescript
+const client = new PNPClient('https://api.mainnet-beta.solana.com');
+const marketAddress = '7AENtBCWx8...';
+
+try {
+  const priceData = await client.getMarketPriceV2(marketAddress);
+  
+  console.log('Market Prices:');
+  console.log(`  YES: $${priceData.yesPrice.toFixed(4)} (${priceData.yesMultiplier.toFixed(2)}x)`);
+  console.log(`  NO:  $${priceData.noPrice.toFixed(4)} (${priceData.noMultiplier.toFixed(2)}x)`);
+  console.log(`  Total Reserves: ${priceData.marketReserves}`);
+} catch (error) {
+  console.error('Error fetching market price:', error);
+}
+```
+
 ### Proxy Server Integration
 
 The SDK provides methods to interact with the PNP proxy server for fetching market data and settlement information.
@@ -1480,6 +1609,20 @@ interface SettlementData {
   answer: string;                     // 'YES', 'NO', or other resolution
   reasoning: string;                  // Explanation for the resolution
   // ... potentially other fields
+}
+
+// Market price data from V2 AMM
+interface MarketPriceV2Data {
+  yesPrice: number;                   // YES token price (0-1 range)
+  noPrice: number;                    // NO token price (0-1 range)
+  yesMultiplier: number;              // Return multiplier if YES wins
+  noMultiplier: number;               // Return multiplier if NO wins
+  marketReserves: number;             // Total collateral (human-readable)
+  yesTokenSupply: number;             // YES supply (human-readable)
+  noTokenSupply: number;              // NO supply (human-readable)
+  marketReservesRaw: string;          // Total collateral (raw base units)
+  yesTokenSupplyRaw: string;          // YES supply (raw base units)
+  noTokenSupplyRaw: string;           // NO supply (raw base units)
 }
 ```
 
