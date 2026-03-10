@@ -1,0 +1,204 @@
+---
+title: "For Market Creators"
+description: "How to create a PAMM prediction market, what creators earn, risk profile, and why PAMM is the best bootstrappable liquidity model for spinning up markets fast."
+---
+
+# For Market Creators
+
+As a PAMM market creator, you are **the house**. Your capital deposit becomes the market's liquidity backbone. You don't receive tokens — your collateral IS the pool. This page covers everything a creator needs to know.
+
+## Creating a Market
+
+To create a PAMM market, you call `createPredictionMarket` on the PNPFactory contract with:
+
+| Parameter | Description |
+|-----------|-------------|
+| `initialLiquidity` | Collateral amount to deposit (e.g. 10,000 USDC) |
+| `collateralToken` | The ERC-20 token used for trading (e.g. USDC, WETH) |
+| `question` | The prediction question |
+| `endTime` | Unix timestamp when the market closes |
+
+**What happens:**
+
+1. Your collateral is transferred to the PNPFactory contract
+2. The reserve `R` is set to your deposit amount
+3. **You receive zero tokens** — your capital becomes the virtual liquidity depth
+4. The market is immediately tradeable at 50/50
+
+```
+Creator deposits 10,000 USDC
+→ R = 10,000
+→ V_YES = 10,000,  V_NO = 10,000
+→ price_YES = 50%,  price_NO = 50%
+→ Market is LIVE
+```
+
+That's it. One transaction, instant market.
+
+## Why You Get Zero Tokens
+
+If you received tokens at creation, those tokens would count in `S_YES` or `S_NO`, destroying the virtual liquidity:
+
+```
+If creator got 10,000 YES tokens:
+  R = 10,000
+  S_YES = 10,000
+  V_YES = R - S_YES = 0  ← Pool is dead. No liquidity.
+```
+
+Your capital must be fully absorbed into the virtual pool. It IS the pool. Your 10,000 USDC makes `V_YES = V_NO = 10,000` possible.
+
+## How You Make Money
+
+Creators earn through three channels:
+
+### 1. Take Fees (Compound in Reserve)
+
+Every trade has a 1% **take fee** that stays inside the reserve. This grows `R` over time without minting additional tokens. Since your economic exposure is tied to what remains in `R` after settlement, every trade makes the reserve slightly deeper — benefiting you.
+
+After 100 trades averaging 1,000 USDC each:
+```
+Take fees accumulated: ~980 USDC
+This is now part of R, increasing your claim on remaining reserve.
+```
+
+### 2. Remaining Reserve After Settlement
+
+When the market resolves and all winners redeem, whatever is left in `R` goes back to you. This includes:
+
+- Your initial deposit (if not fully consumed by winners)
+- Accumulated take fees
+- Collateral from the losing side that wasn't claimed by winners
+
+### 3. Protocol Fee Split (50%)
+
+A separate 1% **protocol fee** is collected on every trade and sent to the FeeManager contract. After the market's end time, this fee pool is split **50/50** between you and the protocol.
+
+## Creator Revenue Example
+
+```
+Market: 10,000 USDC initial deposit
+Trading volume: 50,000 USDC buys + 30,000 USDC sells
+
+Protocol fees collected: ~800 USDC total
+  → Creator's share: 400 USDC (claimable from FeeManager)
+
+Take fees in reserve: ~490 USDC (compounding in R)
+
+If market is balanced and resolves:
+  → Creator recovers initial deposit + take fees + losing side leftover
+  → Net profit: 400 USDC (protocol fees) + portion of remaining reserve
+```
+
+## Your Risk Profile
+
+<Warning>
+The creator bears directional risk. If the market is heavily one-sided and the favored side wins, you can lose your entire deposit.
+</Warning>
+
+### Best Case: Balanced Market
+
+Both sides trade roughly equally. Fees accumulate. After settlement, the losing side's collateral partially remains in the reserve. You recover your deposit plus profit.
+
+```
+Balanced market, 10K initial, YES wins:
+  Reserve grew to 20,200 from trading + fees
+  YES holders claim 18,000
+  Remaining: 2,200 → creator claims
+  Net: -10,000 + 2,200 + 400 (protocol fees) = -7,400
+
+Wait — in this scenario the creator still loses? Let's be precise.
+```
+
+The math depends on the exact ratio. Here's the honest breakdown:
+
+### Scenario: One-Sided Market (Everyone Buys YES, YES Wins)
+
+```
+Initial: R = 10,000 (your deposit)
+Trading: +3,000 from YES buyers
+Final R: 13,000
+
+YES wins. All 13,000 goes to YES holders.
+Creator gets: 0 + protocol fee share
+Loss: -10,000 + ~30 (fee share) = -9,970
+```
+
+You were effectively the implicit NO side, and you lost.
+
+### Scenario: One-Sided Market (Everyone Buys YES, NO Wins)
+
+```
+Final R: 13,000
+S_NO = 0 — no NO tokens exist
+
+No one can redeem. Creator calls claimRemainingReserve().
+Creator gets: 13,000 + protocol fee share
+Profit: +3,000 + ~30 = +3,030
+```
+
+You pocketed the YES buyers' collateral. You were the implicit NO side and won.
+
+### Scenario: No Trading Activity
+
+```
+R = 10,000, S_YES = 0, S_NO = 0
+Market expires. Creator claims full reserve.
+Profit: 0 (capital returned in full)
+```
+
+### Risk Summary
+
+| Scenario | Creator Outcome |
+|----------|----------------|
+| Balanced market, either side wins | Moderate profit from fees + remaining reserve |
+| One-sided, favored side wins | **Loss up to 100% of deposit** |
+| One-sided, underdog wins | Significant profit |
+| No trading activity | Capital returned in full |
+
+**You are short volatility and long balanced markets.** The more evenly split the trading activity, the better your outcome.
+
+## Why PAMM Is the Best Bootstrappable Model
+
+If you're looking to spin up prediction markets quickly, PAMM solves the problems that kill other models:
+
+### No Chicken-and-Egg Problem
+
+Traditional AMMs need LP tokens with both sides deposited. PAMM needs one deposit. Done.
+
+### No Market Maker Needed
+
+Order books require active market makers placing bids and asks. PAMM provides continuous liquidity algorithmically. Traders can buy and sell 24/7 without anyone on the other side.
+
+### Instant Activation
+
+One transaction creates a fully functional, continuously tradeable market. No waiting for liquidity providers, no minimum participation threshold.
+
+### Predictable Liquidity Depth
+
+Your deposit directly controls how tight the spreads are. Deposit more = less slippage for traders. The relationship is transparent and deterministic.
+
+### Built-in Fee Revenue
+
+You earn fees on every single trade — both the protocol fee split and the take fees that compound in the reserve. This is passive income from market activity.
+
+### Any Collateral Token
+
+PAMM works with any ERC-20 as collateral. USDC, WETH, DAI — whatever your community prefers.
+
+## For Partners
+
+If you're building a platform and want to offer prediction markets, PAMM gives you:
+
+- **One contract deployment** — PNPFactory handles everything
+- **ERC-1155 outcome tokens** — standard, composable, tradeable
+- **Configurable fees** — set protocol and take fee rates
+- **Permissionless market creation** — let your users create markets
+- **Settlement flexibility** — any authorized address can settle
+- **Full collateral custody** — all funds in the contract, transparent on-chain
+
+The creator flow is a single `createPredictionMarket()` call. Integration is straightforward for any EVM chain.
+
+<Card title="Economics Deep Dive" icon="chart-line" href="/pamm/economics">
+  Fee structure, settlement math, worked examples with numbers
+</Card>

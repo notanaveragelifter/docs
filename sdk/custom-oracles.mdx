@@ -1,0 +1,310 @@
+---
+title: "Custom Oracles"
+description: "Build your own oracle to resolve PNP prediction markets -- lifecycle management, buffer periods, and production-ready mainnet examples."
+---
+
+# Custom Oracles
+
+Custom Oracles give you **sovereign control** over prediction market resolution. Instead of relying on PNP's AI oracle, you become the authority that decides market outcomes.
+
+## Why Custom Oracles?
+
+Custom Oracles unlock powerful use cases that weren't possible before:
+
+| Use Case | Description |
+| :--- | :--- |
+| **AI Agents** | Build autonomous agents that create and resolve their own prediction markets based on real-world data feeds |
+| **Community Markets** | DAOs and communities can create markets around internal events, governance decisions, or community milestones |
+| **Gaming & Esports** | Game studios can create markets for in-game events with their own verification systems |
+| **Private Enterprise** | Companies can run internal prediction markets for forecasting with proprietary data sources |
+| **Custom Data Feeds** | Integrate with any API or data source—sports feeds, weather data, stock prices, or custom sensors |
+
+> **For Builders**: If you're building an AI agent, a community platform, or any application that needs programmatic control over market outcomes—Custom Oracles are for you.
+
+## How It Works
+
+When you create a market with a custom oracle:
+
+1. **You specify a `settlerAddress`** — This is the wallet that has exclusive authority to resolve the market
+2. **PNP's global AI oracle is bypassed** — Only YOUR oracle can determine the outcome
+3. **You control the timeline** — Mark the market resolvable when you're ready, then settle it
+
+```typescript
+// The key parameter is `settlerAddress`
+const market = await client.createMarketWithCustomOracle({
+  question: "Your market question",
+  initialLiquidity: 5_000_000n,
+  endTime: BigInt(Math.floor(Date.now() / 1000) + 86400),
+  collateralMint: USDC_MINT,
+  settlerAddress: YOUR_ORACLE_PUBKEY,  // This wallet controls resolution
+});
+```
+
+## The 15-Minute Buffer Period
+
+> **Critical**: After market creation, you have a **15-minute buffer window** to activate your market.
+
+Here's how the buffer period works:
+
+| Timeline | Market State | What to Do |
+| :--- | :--- | :--- |
+| **0 - 15 minutes** | `NOT_TRADEABLE` | Oracle must call `setMarketResolvable(true)` to enable trading |
+| **If activated within 15 min** | `TRADEABLE` | Users can buy/sell YES and NO tokens |
+| **If NOT activated within 15 min** | `UNRESOLVABLE` | Market is permanently frozen, users cannot trade |
+
+**Why this matters:**
+- The buffer period protects users from trading on markets that may never be resolved
+- It ensures the oracle is actively monitoring the market
+- You can activate trading instantly (even in seconds) by calling `setMarketResolvable(true)` right after creation
+
+```typescript
+// Immediately after creating the market, enable trading:
+await client.setMarketResolvable(marketAddress, true);
+```
+
+## Oracle Lifecycle
+
+As a custom oracle operator, you're responsible for the full market lifecycle:
+
+### Step 1: Create Market
+
+```typescript
+const result = await client.createMarketWithCustomOracle({
+  question: 'Will BTC hit $150K by Dec 2026?',
+  initialLiquidity: 50_000_000n, // 50 USDC
+  endTime: BigInt(Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60),
+  collateralMint: USDC_MINT,
+  settlerAddress: ORACLE_WALLET,
+});
+
+console.log('Market:', result.market.toBase58());
+```
+
+### Step 2: Enable Trading (Within 15 Minutes!)
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from 'pnp-sdk';
+
+const MARKET = 'YourMarketAddressHere';
+
+async function enableTrading() {
+  const client = new PNPClient(RPC_URL, PNPClient.parseSecretKey(ORACLE_PRIVATE_KEY));
+
+  console.log('Setting market resolvable to TRUE...');
+
+  const result = await client.setMarketResolvable(new PublicKey(MARKET), true);
+
+  console.log('SUCCESS! Trading is now enabled!');
+  console.log(`   TX: ${result.signature}`);
+  console.log(`   Explorer: https://explorer.solana.com/tx/${result.signature}`);
+}
+
+enableTrading().catch(console.error);
+```
+
+### Step 3: Settle the Market
+
+Once the event concludes and you know the outcome:
+
+```typescript
+async function settleMarket() {
+  const client = new PNPClient(RPC_URL, PNPClient.parseSecretKey(ORACLE_PRIVATE_KEY));
+
+  console.log('Settling market...');
+
+  const result = await client.settleMarket({
+    market: new PublicKey(MARKET),
+    yesWinner: true,  // Set to `false` if NO wins
+  });
+
+  console.log('Market settled!');
+  console.log(`   Winner: YES`);
+  console.log(`   TX: ${result.signature}`);
+}
+
+settleMarket().catch(console.error);
+```
+
+## Full Mainnet Example
+
+Here's a production-ready script for creating a custom oracle market on mainnet:
+
+```typescript
+/**
+ * Mainnet Script: Create V2 AMM Market with Custom Oracle
+ *
+ * Creates a prediction market on Solana mainnet with YOUR own oracle.
+ * Only your oracle wallet can resolve/settle this market.
+ *
+ * Usage:
+ *   tsx scripts/createMarketCustomOracle.ts
+ *
+ * Environment Variables:
+ *   PNP_PRIVATE_KEY - Your wallet private key (base58 or JSON array)
+ *   ORACLE_ADDRESS  - (Optional) Custom oracle address. Defaults to your wallet.
+ */
+
+import { createRequire } from 'module';
+import { PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { config } from 'dotenv';
+
+config();
+
+const require = createRequire(import.meta.url);
+const { PNPClient } = require('pnp-sdk');
+
+// =====================================================
+// ========== MAINNET CONFIGURATION ===================
+// =====================================================
+
+const RPC_URL = process.env.RPC_URL || 'https://api.mainnet-beta.solana.com';
+
+const PRIVATE_KEY = process.env.PNP_PRIVATE_KEY;
+if (!PRIVATE_KEY) {
+  console.error('Private key not found in environment');
+  console.log('\nSet it in your .env file:');
+  console.log('  PNP_PRIVATE_KEY=your_base58_private_key_here');
+  process.exit(1);
+}
+
+// Collateral token (USDC on mainnet)
+const COLLATERAL_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+
+// ========== MARKET PARAMETERS =======================
+
+const QUESTION = process.env.MARKET_QUESTION ||
+  'Will this event happen? (Custom Oracle Market)';
+
+const INITIAL_LIQUIDITY = BigInt(
+  process.env.INITIAL_LIQUIDITY || '10000000'  // 10 USDC (6 decimals)
+);
+
+const DAYS_UNTIL_END = Number(process.env.DAYS_UNTIL_END || '30');
+const END_TIME = BigInt(Math.floor(Date.now() / 1000) + DAYS_UNTIL_END * 24 * 60 * 60);
+
+// Optional: Custom YES odds in basis points (100-9900). Default is 5000 (50/50)
+const YES_ODDS_BPS = process.env.YES_ODDS_BPS ? Number(process.env.YES_ODDS_BPS) : undefined;
+
+// =====================================================
+
+async function main() {
+  console.log('\nPNP SDK - Mainnet Market Creation with Custom Oracle\n');
+
+  const secretKey = PNPClient.parseSecretKey(PRIVATE_KEY);
+  const client = new PNPClient(RPC_URL, secretKey);
+
+  console.log('Connected to Solana');
+  console.log(`  Program ID: ${client.client.programId.toBase58()}`);
+  console.log(`  Network: ${client.client.isDevnet ? 'DEVNET' : 'MAINNET'}`);
+
+  if (!client.anchorMarket) {
+    throw new Error('AnchorMarket module not available. Check your private key.');
+  }
+
+  const walletPubkey = client.signer!.publicKey;
+
+  // Custom oracle: use env var or default to your own wallet
+  const ORACLE_ADDRESS = process.env.ORACLE_ADDRESS
+    ? new PublicKey(process.env.ORACLE_ADDRESS)
+    : walletPubkey;  // Default: you are the oracle
+
+  console.log('\nMarket Configuration:');
+  console.log(`  Wallet: ${walletPubkey.toBase58()}`);
+  console.log(`  Question: ${QUESTION}`);
+  console.log(`  Collateral Mint: ${COLLATERAL_MINT.toBase58()}`);
+  console.log(`  Initial Liquidity: ${INITIAL_LIQUIDITY.toString()} (raw units)`);
+  console.log(`  End Time: ${new Date(Number(END_TIME) * 1000).toISOString()}`);
+  console.log(`  Custom Oracle: ${ORACLE_ADDRESS.toBase58()}`);
+  if (YES_ODDS_BPS) {
+    console.log(`  YES Odds: ${YES_ODDS_BPS / 100}%`);
+  }
+
+  // Check collateral balance
+  const tokenAta = getAssociatedTokenAddressSync(COLLATERAL_MINT, walletPubkey);
+  console.log('\nChecking collateral balance...');
+
+  try {
+    const balance = await client.client.connection.getTokenAccountBalance(tokenAta);
+    const balanceAmount = BigInt(balance.value.amount);
+    console.log(`  Balance: ${balance.value.uiAmountString} (${balanceAmount} raw)`);
+
+    if (balanceAmount < INITIAL_LIQUIDITY) {
+      console.error(`\nInsufficient balance!`);
+      console.log(`  Have: ${balance.value.uiAmountString}`);
+      console.log(`  Need: ${Number(INITIAL_LIQUIDITY) / 1_000_000}`);
+      process.exit(1);
+    }
+    console.log('  Sufficient balance');
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`\nToken account not found: ${msg}`);
+    process.exit(1);
+  }
+
+  // Create market with custom oracle
+  console.log('\nCreating market with custom oracle...');
+
+  const createRes = await client.createMarketWithCustomOracle({
+    question: QUESTION,
+    initialLiquidity: INITIAL_LIQUIDITY,
+    endTime: END_TIME,
+    collateralMint: COLLATERAL_MINT,
+    settlerAddress: ORACLE_ADDRESS,
+    yesOddsBps: YES_ODDS_BPS,
+  });
+
+  console.log('Confirming transaction...');
+  await client.client.connection.confirmTransaction(createRes.signature, 'confirmed');
+
+  // Output result
+  const result = {
+    success: true,
+    network: client.client.isDevnet ? 'devnet' : 'mainnet',
+    market: createRes.market.toBase58(),
+    signature: createRes.signature,
+    question: QUESTION,
+    customOracle: ORACLE_ADDRESS.toBase58(),
+    collateralMint: COLLATERAL_MINT.toBase58(),
+    initialLiquidity: INITIAL_LIQUIDITY.toString(),
+    endTime: new Date(Number(END_TIME) * 1000).toISOString(),
+    explorerUrl: `https://explorer.solana.com/address/${createRes.market.toBase58()}`,
+    txUrl: `https://explorer.solana.com/tx/${createRes.signature}`
+  };
+
+  console.log('\nMARKET CREATED SUCCESSFULLY WITH CUSTOM ORACLE!');
+  console.log(JSON.stringify(result, null, 2));
+
+  console.log('\nImportant Next Steps:');
+  console.log(`  1. Call setMarketResolvable(true) within 15 minutes to enable trading`);
+  console.log(`  2. Only ${ORACLE_ADDRESS.toBase58()} can resolve this market`);
+  console.log(`  3. PNP's AI oracle has NO authority over this market`);
+  console.log(`  4. After end time, your oracle must settle the market`);
+}
+
+main().catch((err) => {
+  console.error('\nError:', err.message || err);
+  if (err.logs) {
+    console.error('Program logs:', err.logs);
+  }
+  process.exit(1);
+});
+```
+
+**Environment Variables (.env file):**
+
+```bash
+# Required
+PNP_PRIVATE_KEY=your_base58_private_key_here
+
+# Optional
+RPC_URL=https://api.mainnet-beta.solana.com
+ORACLE_ADDRESS=your_oracle_pubkey  # Defaults to your wallet
+MARKET_QUESTION="Will X happen?"
+INITIAL_LIQUIDITY=10000000  # 10 USDC
+DAYS_UNTIL_END=30
+YES_ODDS_BPS=5000  # 50% (range: 100-9900)
+```
+
+> **Pro Tip**: For production deployments, consider running your oracle as a dedicated service with automated resolution logic tied to external data sources.

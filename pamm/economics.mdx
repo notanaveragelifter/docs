@@ -1,0 +1,209 @@
+---
+title: "PAMM Economics"
+description: "Fee architecture, settlement payouts, worked numerical examples, and comparison to other prediction market AMMs for PNP's Virtual Liquidity CPMM."
+---
+
+# PAMM Economics
+
+This page covers the fee structure, settlement mechanics, and worked examples that show how money flows through a PAMM market.
+
+## Fee Architecture
+
+Two fees are applied on every trade:
+
+| Fee | Rate | Where It Goes | When |
+|-----|------|--------------|------|
+| **Protocol Fee** | 1% (100 bps) | FeeManager contract | Every buy and sell |
+| **Take Fee** | 1% (100 bps) | Stays in market reserve | Every buy |
+
+### Protocol Fee
+
+Deducted from the trader's collateral **before** it enters the bonding curve. This money leaves the market entirely and goes to the FeeManager contract, which splits it **50/50** between the market creator and protocol owner after the market ends.
+
+### Take Fee
+
+Deducted **after** the protocol fee but **stays inside the reserve**. It enters `R` but doesn't produce tokens. This means the virtual reserves are slightly deeper than they would be without the take fee. Over many trades, this silently increases liquidity depth.
+
+### Combined Effect on a 1,000 USDC Buy
+
+```
+Collateral in:     1,000.00 USDC
+Protocol fee:        -10.00 (1%)  → leaves the system
+Net:                 990.00
+Take fee:             -9.90 (1% of 990) → stays in reserve
+Amount for curve:    980.10
+
+R increases by 990.00 (includes the take fee portion)
+Tokens minted are based on 980.10
+```
+
+The 9.90 take fee is "trapped" in the reserve, making the market slightly deeper for future trades.
+
+### Effective Round-Trip Cost
+
+- Buy: 1% protocol + 1% take = ~2% off collateral before curve
+- Sell: 1% protocol off the collateral released
+- **Total round-trip: ~3% of principal**
+
+## Settlement and Payouts
+
+### How Resolution Works
+
+After the market's `endTime`, an authorized party (creator or protocol owner) calls `settleMarket()` declaring the winner — either the YES or NO token ID.
+
+### Winner Payout Formula
+
+Winners split the **entire reserve** pro-rata:
+
+```
+payout_i = (my_winning_tokens / total_winning_supply) * R
+```
+
+The reserve `R` contains **everything** — the creator's initial deposit, all collateral from buyers, accumulated take fees. Winners take it all.
+
+### Losers
+
+Losers get nothing. Their collateral is already part of `R` and gets distributed to winners.
+
+### Creator's Remaining Claim
+
+After all winners have redeemed, the creator calls `claimRemainingReserve()` to recover whatever is left in `R`. This includes:
+
+- Unredeemed funds (if some winners never claim)
+- Rounding dust
+- In one-sided markets where the losing side had no tokens: the entire reserve
+
+## Worked Examples
+
+All examples below use **zero fees** to isolate the bonding curve mechanics.
+
+### Example 1: First Trade in a Fresh Market
+
+**Setup:** Market created with R = 10,000 USDC
+
+```
+Initial State:
+  R = 10,000    S_YES = 0    S_NO = 0
+  V_YES = 10,000    V_NO = 10,000
+  price_YES = 50.00%
+```
+
+**Alice buys 1,000 USDC of YES:**
+
+```
+Swap component:
+  additional_YES = (1,000 * 10,000) / (10,000 + 1,000) = 909.09
+
+Total YES to Alice = 1,000 + 909.09 = 1,909.09 tokens
+
+New State:
+  R = 11,000    S_YES = 1,909.09    S_NO = 0
+  V_YES = 9,090.91    V_NO = 11,000
+  price_YES = 54.75%
+```
+
+Alice paid 1,000 USDC for 1,909.09 tokens. Average entry: **0.524 USDC/token** (52.4%).
+
+### Example 2: Price Impact in Action
+
+**Bob buys another 1,000 USDC of YES** (continuing from above):
+
+```
+additional_YES = (1,000 * 9,090.91) / (11,000 + 1,000) = 757.58
+
+Total YES to Bob = 1,000 + 757.58 = 1,757.58 tokens
+
+New State:
+  R = 12,000    S_YES = 3,666.67    S_NO = 0
+  V_YES = 8,333.33    V_NO = 12,000
+  price_YES = 59.02%
+```
+
+Bob paid the same 1,000 USDC but got only 1,757.58 tokens (vs Alice's 1,909.09). Average entry: **0.569** (56.9%). The curve charges more as YES becomes popular.
+
+### Example 3: Opposing Trade Pushes Price Back
+
+**Carol buys 2,000 USDC of NO:**
+
+```
+additional_NO = (2,000 * 12,000) / (8,333.33 + 2,000) = 2,322.58
+
+Total NO to Carol = 2,000 + 2,322.58 = 4,322.58 tokens
+
+New State:
+  R = 14,000    S_YES = 3,666.67    S_NO = 4,322.58
+  V_YES = 10,333.33    V_NO = 9,677.42
+  price_YES = 48.36%
+```
+
+Carol's NO purchase pushed YES price **back down** from 59% to 48.36%. The market flipped.
+
+### Example 4: Settlement
+
+**Continuing from above — YES wins:**
+
+```
+Reserve: R = 14,000
+Total YES supply: 3,666.67 (Alice: 1,909.09, Bob: 1,757.58)
+
+Alice's payout: (1,909.09 / 3,666.67) * 14,000 = 7,290.91 USDC
+Bob's payout:   (1,757.58 / 3,666.67) * 14,000 = 6,709.09 USDC
+Total paid out: 14,000 USDC
+
+Alice: invested 1,000 → received 7,290.91 → profit +6,290.91
+Bob:   invested 1,000 → received 6,709.09 → profit +5,709.09
+Carol: invested 2,000 → received 0         → loss -2,000
+Creator: deposited 10,000 → remaining reserve 0 → loss -10,000
+```
+
+In this one-sided scenario (only YES and NO bought, YES wins), the creator loses their deposit. Carol (NO buyer) loses too. Alice and Bob profit massively.
+
+**If NO had won instead:**
+
+```
+Carol's payout: (4,322.58 / 4,322.58) * 14,000 = 14,000 USDC
+Carol: invested 2,000 → received 14,000 → profit +12,000
+Creator: claimRemainingReserve() → 0 (all claimed by Carol)
+```
+
+### Trade Summary
+
+| Trade | Actor | Action | Amount | Tokens | Avg Price | YES Price After |
+|-------|-------|--------|--------|--------|-----------|----------------|
+| 1 | Alice | Buy YES | 1,000 USDC | 1,909.09 | 0.524 | 54.75% |
+| 2 | Bob | Buy YES | 1,000 USDC | 1,757.58 | 0.569 | 59.02% |
+| 3 | Carol | Buy NO | 2,000 USDC | 4,322.58 | 0.463 | 48.36% |
+
+## Creator Economics by Scenario
+
+| Scenario | Reserve at End | Creator Gets Back | Net P&L |
+|----------|---------------|-------------------|---------|
+| Balanced trading, YES wins | R grew from fees + both sides | Remaining after winner payouts + protocol fee share | Moderate profit |
+| Only YES bought, YES wins | R = initial + YES collateral | 0 (winners take all) | **Full loss** |
+| Only YES bought, NO wins | R = initial + YES collateral | Entire reserve (no NO tokens to redeem) | Profit = YES collateral |
+| No trading | R = initial deposit | Full deposit returned | Break even |
+
+## Comparison to Other Models
+
+| Feature | PNP PAMM | Order Book (Polymarket-style) | LMSR (Gnosis/Omen) |
+|---------|----------|-------------------------------|---------------------|
+| Market maker | Virtual CPMM | Limit orders from makers | Cost function |
+| Bootstrapping | One deposit | Need active market makers | Subsidy provider seeds |
+| Starting price | Always 50/50 | First trade sets it | Configurable |
+| Creator gets tokens? | No | N/A | No |
+| Liquidity depth | Proportional to reserve | Depends on maker depth | Proportional to subsidy |
+| Max creator loss | 100% of deposit | N/A | 100% of subsidy |
+| Gas per trade | Single tx | Multiple (matching) | Single tx |
+| Price bounds | (0, 1) asymptotic | [0, 1] discrete | (0, 1) |
+
+## Key Takeaways
+
+1. **The reserve IS the pool.** No separate AMM pool. Virtual reserves are derived from `R`, `S_YES`, and `S_NO`.
+
+2. **Take fees compound silently.** Unlike protocol fees that leave the system, take fees grow the reserve. After many trades, the reserve is deeper than the sum of all deposits.
+
+3. **Settlement is winner-takes-all.** The entire reserve is distributed to holders of the winning token. Losers get zero. The creator gets what's left.
+
+4. **Round-trip cost is ~3%.** 2% on entry (protocol + take), 1% on exit (protocol only). Competitive with most prediction market platforms.
+
+5. **Prices are self-correcting.** As one side gets expensive, buying the other side becomes cheaper. Natural mean-reversion pressure at extremes.

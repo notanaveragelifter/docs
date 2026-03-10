@@ -5,7 +5,7 @@ description: "Understanding the different market models available for creating p
 
 ## Market Models
 
-PnP Protocol offers two distinct market models, each designed for different trading mechanisms and liquidity structures.
+PnP Protocol offers three market models, each designed for different trading mechanisms, liquidity structures, and deployment targets.
 
 ---
 
@@ -80,14 +80,32 @@ The amount of USDC you want to provide as initial liquidity for the market.
 
 ---
 
+---
+
+## PAMM — Virtual Liquidity AMM (EVM)
+
+The **Prediction AMM (PAMM)** is a Virtual Liquidity CPMM deployed on EVM chains (Monad, Base, Polygon). A creator deposits collateral to seed a market — no LP tokens, no order books. The AMM derives virtual reserves from on-chain state and runs Uniswap V2-style constant product math.
+
+**Key Properties:**
+- One deposit creates instant, continuous liquidity
+- ERC-1155 outcome tokens (YES/NO)
+- 1% protocol fee (split 50/50 creator/protocol) + 1% take fee (compounds in reserve)
+- Settlement: winners split the entire reserve pro-rata
+
+See the full [PAMM documentation](/pamm/overview) for mechanics, creator guide, and economics.
+
+---
+
 ## Key Differences
 
-| Feature | V2 Model | V3 Parimutuel |
-|---------|----------|---------------|
-| **Liquidity Distribution** | Split equally YES/NO | Choose side |
-| **Pricing Mechanism** | Algorithmic market maker | Parimutuel pool |
-| **Max Pot Ratio** | Not applicable | Configurable |
-| **Best For** | Balanced markets | Event-based betting |
+| Feature | V2 Model (Solana) | V3 Parimutuel (Solana) | PAMM (EVM) |
+|---------|----------|---------------|------------|
+| **Chain** | Solana | Solana | EVM (Monad, Base, Polygon) |
+| **Liquidity Distribution** | Split equally YES/NO | Choose side | Virtual reserves from single deposit |
+| **Pricing Mechanism** | Pythagorean bonding curve | Parimutuel pool | Constant product (CPMM) |
+| **Token Standard** | SPL | SPL | ERC-1155 |
+| **Max Pot Ratio** | Not applicable | Configurable | Not applicable |
+| **Best For** | Balanced markets | Event-based betting | Fast-launch markets on EVM |
 
 ---
 

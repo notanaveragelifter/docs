@@ -1,0 +1,114 @@
+---
+title: "SDK Overview"
+description: "Install and initialize the PNP SDK, a TypeScript library for creating and trading Solana prediction markets programmatically."
+---
+
+# PnP SDK Documentation
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+
+**Guides:**
+- [Create a Market](/sdk/create-market)
+- [Custom Oracles](/sdk/custom-oracles)
+- [Trading & Redemption](/sdk/trading)
+- [Refunds](/sdk/refunds)
+- [API Reference](/sdk/api-reference)
+- [CLI Usage](/sdk/cli)
+- [Examples & Best Practices](/sdk/guides)
+
+## Overview
+
+The PnP SDK is a TypeScript library for interacting with Solana-based prediction markets. It provides a clean, type-safe interface for creating markets, trading positions, and managing market operations on the Solana blockchain.
+
+### Features
+
+- Create and manage prediction markets on Solana
+- Trade YES/NO tokens
+- Redeem positions for resolved markets
+- Claim creator refunds for unresolved markets
+- Interact with on-chain market data
+- **Fetch real-time market prices & multipliers** (no wallet required)
+- Fetch settlement criteria from proxy server
+- TypeScript-first development experience
+- Comprehensive error handling
+- Built on top of `@solana/web3.js` and supports both SPL Token and Token-2022 programs
+
+### Prerequisites
+
+- Node.js 16+
+- npm or yarn
+- Solana CLI (for local development)
+- Basic understanding of Solana and blockchain concepts
+
+### Installation
+
+```bash
+npm install pnp-sdk
+# or
+yarn add pnp-sdk
+```
+
+### Quick Start
+
+1. Install the package:
+   ```bash
+   npm install pnp-sdk
+   ```
+
+2. Import the SDK - Two methods are supported:
+
+   **Method 1: ESM Direct Import (Recommended)**
+   ```typescript
+   // For TypeScript/ES modules
+   import { PNPClient } from 'pnp-sdk';
+   ```
+
+   **Method 2: CommonJS Require (For compatibility)**
+   ```typescript
+   // For CommonJS environments or when using the built package
+   import { createRequire } from 'module';
+   const require = createRequire(import.meta.url);
+   const { PNPClient } = require('pnp-sdk');
+   // Or when developing locally
+   const { PNPClient } = require('../dist/index.cjs');
+   ```
+
+3. Initialize the client:
+   ```typescript
+   import { PNPClient } from 'pnp-sdk';
+   import { PublicKey } from '@solana/web3.js';
+
+   // Initialize with RPC URL and private key (if write operations are needed)
+   const rpcUrl = 'https://api.mainnet-beta.solana.com';
+
+   // For read-only operations
+   const readOnlyClient = new PNPClient(rpcUrl);
+
+   // For write operations (with private key)
+   const privateKey = [...]; // Uint8Array of your private key or base58 encoded string
+   const client = new PNPClient(rpcUrl, privateKey);
+   ```
+
+3. Example operation - fetching market info:
+   ```typescript
+   async function getMarketInfo(marketAddress: string) {
+     try {
+       const market = new PublicKey(marketAddress);
+       const { account } = await client.fetchMarket(market);
+
+       console.log('Market Question:', account.question);
+       console.log('Market Creator:', new PublicKey(account.creator).toBase58());
+       console.log('Market Resolved:', account.resolved);
+
+       return account;
+     } catch (error) {
+       console.error('Error fetching market:', error);
+       throw error;
+     }
+   }
+   ```

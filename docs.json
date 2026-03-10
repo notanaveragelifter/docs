@@ -14,7 +14,7 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
               "why-we-build-this",
@@ -29,11 +29,12 @@
               "youtube",
               "coin",
               "twitter",
-              "defillama"
+              "defillama",
+              "kalshi-derivative"
             ]
           },
           {
-            "group": "PNP architecture",
+            "group": "PNP Architecture",
             "pages": [
               "quickstart",
               "development",
@@ -41,13 +42,44 @@
               "bonding",
               "module"
             ]
+          }
+        ]
+      },
+      {
+        "tab": "Developers",
+        "groups": [
+          {
+            "group": "PNP SDK",
+            "pages": [
+              "sdk/overview",
+              "sdk/create-market",
+              "sdk/custom-oracles",
+              "sdk/trading",
+              "sdk/refunds",
+              "sdk/api-reference",
+              "sdk/cli",
+              "sdk/guides"
+            ]
           },
           {
-            "group": "$PNP Suite",
+            "group": "Tools & Integrations",
             "pages": [
-              "pnp-sdk",
-              "pnp-agent",
-              "kalshi-derivative"
+              "sdk/overview",
+              "pnp-agent"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "PAMM",
+        "groups": [
+          {
+            "group": "Virtual Liquidity AMM",
+            "pages": [
+              "pamm/overview",
+              "pamm/how-it-works",
+              "pamm/for-creators",
+              "pamm/economics"
             ]
           }
         ]
@@ -73,6 +105,12 @@
       ]
     }
   },
+  "redirects": [
+    {
+      "source": "/pnp-sdk",
+      "destination": "/sdk/overview"
+    }
+  ],
   "logo": {
     "light": "/logo/logo1.jpg",
     "dark": "/logo/logo1.jpg",

@@ -1,0 +1,96 @@
+---
+title: "CLI Usage"
+description: "Use the PNP command-line interface to create prediction markets, execute trades, and query market data from your terminal."
+---
+
+# CLI Usage
+
+The PNP CLI provides a convenient way to interact with prediction markets. Below are the available commands and their usage.
+
+## Environment Variables
+
+```bash
+# Required: Solana RPC endpoint
+RPC_URL=https://api.devnet.solana.com
+
+# Required: Wallet configuration (choose one)
+WALLET_SECRET_ARRAY=[1,2,3,...]  # Array of numbers
+WALLET_BS58=your_base58_private_key
+WALLET_FILE=/path/to/wallet.json
+
+# Optional: Path to IDL file
+PNP_IDL_PATH=./path/to/idl.json
+```
+
+## Commands
+
+### Create a New Market
+```bash
+pnp create market "<question>" [--liquidity <lamports>] [--end <iso|days>]
+```
+
+**Examples:**
+```bash
+# Create market with default liquidity and end time (30 days from now)
+pnp create market "Will BTC reach $100K by 2025?"
+
+# Create market with custom liquidity (in lamports)
+pnp create market "Will ETH reach $10K?" --liquidity 1000000000
+
+# Create market with specific end date (ISO format or days from now)
+pnp create market "Will SOL reach $500?" --end "2025-12-31T23:59:59Z"
+pnp create market "Will DOT reach $100?" --end 14  # 14 days from now
+```
+
+### Trading
+```bash
+# Buy tokens with USDC
+pnp trade <marketId> buy <YES|NO> <amount_usdc>
+
+# Sell tokens for USDC
+pnp trade <marketId> sell <YES|NO> <amount_base_units>
+
+# Check token balances
+pnp trade <marketId> balance
+
+# View current market prices
+pnp trade <marketId> prices
+```
+
+**Examples:**
+```bash
+# Buy $20 worth of YES tokens
+pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd buy YES 20
+
+# Sell 10.5 NO tokens
+pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd sell NO 10.5
+
+# Check balances
+pnp trade 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd balance
+```
+
+### Market Information
+```bash
+# Get market status
+pnp status <marketId>
+
+# List all available markets
+pnp fetchMarkets
+
+# Get settlement criteria from proxy server
+pnp settlementCriteria <marketId>
+```
+
+The `settlementCriteria` command prints only the settlement criteria JSON returned by the proxy for the provided `<marketId>`.
+
+**Examples:**
+```bash
+# Check if a market can be resolved or is settled
+pnp status 3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd
+
+# List all available markets
+pnp fetchMarkets
+
+# Fetch settlement criteria for a market via proxy
+pnp settlementCriteria H6juzjuc6oqMFos8svRE54WKNmBwVK7MyTyAaVUES62T
+```

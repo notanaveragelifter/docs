@@ -1,0 +1,451 @@
+---
+title: "Examples & Best Practices"
+description: "Production-ready code examples, error handling patterns, security best practices, FAQ, and contribution guidelines for the PNP SDK."
+---
+
+# Examples & Best Practices
+
+## Usage Examples
+
+### Creating a Market
+
+This example demonstrates how to create a new prediction market using the SDK.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const PRIVATE_KEY = [...]; // Your private key as Uint8Array or base58 string
+
+async function createMarket() {
+  // Initialize client with private key (required for write operations)
+  const client = new PNPClient(RPC_URL, PRIVATE_KEY);
+
+  // Check if market module is available (requires valid signer)
+  if (!client.market) {
+    throw new Error(
+      'PNPClient.market is undefined. Ensure your wallet secret is valid.'
+    );
+  }
+
+  // Market parameters
+  const question = 'Will Bitcoin reach $100k by end of 2023?';
+  const initialLiquidity = 2_000_000n; // 2 USDC with 6 decimals
+  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
+
+  // USDC on mainnet as collateral token
+  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+
+  console.log('Creating market with parameters:');
+  console.log('Question:', question);
+  console.log('Initial Liquidity:', initialLiquidity.toString());
+  console.log('End Time:', new Date(Number(endTime) * 1000).toISOString());
+
+  try {
+    // Create the market
+    const res = await client.market.createMarket({
+      question,
+      initialLiquidity,
+      endTime,
+      baseMint: collateralMint, // explicitly set to USDC
+    });
+
+    console.log('Market created successfully!');
+    console.log('Signature:', res.signature || res);
+
+    // Extract market public key from response
+    const market = res.market;
+    if (market) {
+      const marketAddress = typeof market.toBase58 === 'function' ?
+        market.toBase58() : market.toString();
+      console.log('Market Address:', marketAddress);
+
+      // Optional: Fetch the market details
+      try {
+        const { account } = await client.fetchMarket(market);
+        console.log('Market Details:', {
+          question: account.question,
+          creator: new PublicKey(account.creator).toBase58(),
+          endTime: new Date(Number(account.end_time) * 1000).toISOString(),
+          resolved: account.resolved
+        });
+      } catch (e) {
+        console.log('Could not fetch market details:', e);
+      }
+    }
+
+    return res;
+  } catch (error) {
+    console.error('Error creating market:', error);
+    throw error;
+  }
+}
+
+createMarket().catch(console.error);
+```
+
+**Key Points:**
+- You must initialize the client with a valid private key to create markets
+- The `baseMint` parameter specifies the collateral token (e.g., USDC)
+- Initial liquidity should be specified in the base units of the collateral token
+- End time is a Unix timestamp in seconds
+
+### Trading Tokens
+
+#### Buying and Selling Tokens
+
+The trading module allows you to buy and sell YES/NO outcome tokens in a market.
+
+```typescript
+import { PublicKey } from '@solana/web3.js';
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const PRIVATE_KEY = [...]; // Your private key
+const MARKET_ADDRESS = '3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd';
+
+async function executeTradeExample() {
+  // Initialize client with private key
+  const client = new PNPClient(RPC_URL, PRIVATE_KEY);
+
+  if (!client.trading) {
+    throw new Error('Trading module not available. Check your private key.');
+  }
+
+  const market = new PublicKey(MARKET_ADDRESS);
+
+  // First, get market information and check prices
+  const info = await client.trading.getMarketInfo(market);
+  console.log('Market Info:', {
+    question: info.question,
+    creator: info.creator.toBase58(),
+    yesPrice: info.yesPrice,
+    noPrice: info.noPrice,
+    resolveableUntil: new Date(Number(info.resolveableUntil) * 1000).toISOString()
+  });
+
+  // Buy YES tokens
+  console.log('Buying YES tokens...');
+  try {
+    // Buy 10 USDC worth of YES tokens
+    const buyResult = await client.trading.buyOutcome({
+      market,
+      outcome: 'YES', // or 'NO'
+      amountUsdc: 10_000_000, // 10 USDC in base units (6 decimals)
+    });
+
+    console.log('Buy transaction successful');
+    console.log('Signature:', buyResult.signature);
+    console.log('Tokens received:', buyResult.tokensReceived);
+  } catch (error) {
+    console.error('Error buying tokens:', error);
+  }
+
+  // Sell YES tokens
+  console.log('\nSelling YES tokens...');
+  try {
+    // Sell 5 YES tokens
+    const sellResult = await client.trading.sellOutcome({
+      market,
+      outcome: 'YES',
+      tokenAmount: 5_000_000, // 5 tokens in base units
+    });
+
+    console.log('Sell transaction successful');
+    console.log('Signature:', sellResult.signature);
+    console.log('USDC received:', sellResult.usdcReceived);
+  } catch (error) {
+    console.error('Error selling tokens:', error);
+  }
+}
+
+executeTradeExample().catch(console.error);
+```
+
+
+### Fetching Settlement Criteria
+
+You can fetch settlement criteria from the proxy server to check if a market is resolvable.
+
+```typescript
+import { PNPClient } from 'pnp-sdk';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const MARKET_ADDRESS = '5ehmgehNxViAhUF9mfTeMHN1JLDqQtipwKup18AuZH7Q';
+
+async function fetchCriteriaExample() {
+  // Initialize read-only client (no private key needed)
+  const client = new PNPClient(RPC_URL);
+
+  try {
+    console.log('Fetching settlement criteria...');
+    // For immediate fetch without retries:
+    const criteria = await client.fetchSettlementCriteria(MARKET_ADDRESS);
+
+    // Or with automatic retrying (waits up to 15 minutes):
+    // const criteria = await client.getSettlementCriteria(MARKET_ADDRESS);
+
+    console.log('Settlement Criteria:', JSON.stringify(criteria, null, 2));
+    console.log('Resolvable:', criteria.resolvable);
+
+    if (criteria.winning_token_id) {
+      console.log('Winning Token:', criteria.winning_token_id);
+    }
+
+    if (criteria.reasoning) {
+      console.log('Reasoning:', criteria.reasoning);
+    }
+  } catch (error) {
+    console.error('Error fetching settlement criteria:', error);
+  }
+}
+
+fetchCriteriaExample().catch(console.error);
+```
+
+### Getting Comprehensive Market Information
+
+This example shows how to gather all available information about a market from both on-chain data and the proxy server.
+
+```typescript
+import { PNPClient } from 'pnp-sdk';
+import { PublicKey } from '@solana/web3.js';
+
+// Configuration
+const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const MARKET_ADDRESS = 'F1g31z3KhACaJDLUFEBQwLiSxm6BdcSHCXDYK2jVNAPU';
+
+async function getComprehensiveMarketInfo(marketId: string) {
+  // Initialize a read-only client (no private key needed)
+  const client = new PNPClient(RPC_URL);
+  const results: any = { marketInfo: null, settlementCriteria: null, settlementData: null };
+
+  try {
+    console.log(`Fetching comprehensive information for market: ${marketId}`);
+
+    // 1. Get on-chain market data
+    try {
+      const marketPK = new PublicKey(marketId);
+      const marketStatus = await client.fetchMarket(marketPK);
+
+      results.marketInfo = {
+        market: marketStatus.publicKey.toString(),
+        question: marketStatus.account.question,
+        creator: new PublicKey(marketStatus.account.creator).toString(),
+        resolvable: marketStatus.account.resolvable,
+        resolved: marketStatus.account.resolved,
+        endTime: new Date(Number(marketStatus.account.end_time) * 1000),
+        creationTime: marketStatus.account.creation_time
+          ? new Date(Number(marketStatus.account.creation_time) * 1000)
+          : undefined,
+        winningToken: marketStatus.account.winning_token_id || null,
+      };
+
+      console.log('\nMarket Information:');
+      console.log(results.marketInfo);
+    } catch (err) {
+      console.error(`Error fetching market data: ${err.message}`);
+    }
+
+    // 2. Get settlement criteria from proxy
+    try {
+      results.settlementCriteria = await client.fetchSettlementCriteria(marketId);
+      console.log('\nSettlement Criteria:');
+      console.log(results.settlementCriteria);
+    } catch (err) {
+      console.error(`Error fetching settlement criteria: ${err.message}`);
+    }
+
+    // 3. Get settlement data from proxy
+    try {
+      results.settlementData = await client.fetchSettlementData(marketId);
+      console.log('\nSettlement Data:');
+      console.log({
+        answer: results.settlementData.answer || 'Not provided',
+        reasoning: results.settlementData.reasoning || 'Not provided'
+      });
+    } catch (err) {
+      console.error(`Error fetching settlement data: ${err.message}`);
+    }
+
+    // 4. Determine market state
+    let marketState = 'Unknown';
+    if (results.marketInfo) {
+      if (results.marketInfo.resolved) {
+        marketState = 'RESOLVED';
+      } else if (!results.marketInfo.resolvable) {
+        marketState = 'NOT RESOLVABLE';
+      } else {
+        const endTime = results.marketInfo.endTime.getTime();
+        if (Date.now() > endTime) {
+          marketState = 'ENDED (pending resolution)';
+        } else {
+          marketState = 'ACTIVE';
+        }
+      }
+    }
+
+    console.log('\nMarket State Summary:');
+    console.log(`State: ${marketState}`);
+    if (results.settlementData?.answer) {
+      console.log(`Resolution: ${results.settlementData.answer}`);
+    }
+
+    return results;
+  } catch (err) {
+    console.error(`Error getting market info: ${err.message}`);
+    throw err;
+  }
+}
+
+getComprehensiveMarketInfo(MARKET_ADDRESS).catch(console.error);
+```
+
+## Best Practices
+
+### Error Handling
+Always wrap SDK calls in try-catch blocks and check for specific error conditions:
+
+```typescript
+try {
+  const result = await client.redeemPosition(market);
+  console.log('Success! Signature:', result.signature);
+} catch (error) {
+  // Check for specific error conditions
+  if (error.message?.includes('Market is not yet resolved')) {
+    console.error('This market has not been resolved yet');
+  } else if (error.message?.includes('Invalid token account')) {
+    console.error('You may not have the correct tokens in your wallet');
+  } else {
+    console.error('Transaction failed:', error.message || error);
+  }
+
+  // If error has program logs, display them for debugging
+  if (error.logs && Array.isArray(error.logs)) {
+    console.log('Program logs:', error.logs);
+  }
+}
+```
+
+### SDK Initialization
+
+1. **Read-only operations**: Initialize without a private key
+   ```typescript
+   const readOnlyClient = new PNPClient('https://api.mainnet-beta.solana.com');
+   ```
+
+2. **Write operations**: Initialize with a private key
+   ```typescript
+   const client = new PNPClient(
+     'https://api.mainnet-beta.solana.com',
+     'base58EncodedPrivateKeyString'
+   );
+   ```
+
+3. **Always verify that required modules are available**
+   ```typescript
+   if (!client.trading) {
+     throw new Error('Trading module not available. Check your private key.');
+   }
+   ```
+
+### Performance Optimization
+- Batch transactions when possible
+- Use commitment levels appropriately
+- Cache frequently accessed accounts
+- Use connection commitment level 'confirmed' for better performance
+
+### Security Considerations
+- Never expose private keys in client-side code
+- Validate all user inputs
+- Use the latest version of the SDK
+- Verify transaction details before signing
+
+## Frequently Asked Questions
+
+### How do I get started with the SDK?
+See the [Quick Start](/sdk/overview#quick-start) section for installation and basic usage.
+
+### What networks are supported?
+The SDK supports all Solana networks: mainnet-beta, devnet, and testnet.
+
+### How do I handle transaction timeouts?
+Implement retry logic with exponential backoff:
+
+```typescript
+async function retryTransaction(fn, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+    }
+  }
+}
+```
+
+### How can I monitor market events?
+Use Solana's websocket API to subscribe to program accounts and logs.
+
+### What's the difference between market and limit orders?
+- Market orders execute immediately at the best available price
+- Limit orders only execute at the specified price or better
+
+## Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a pull request
+
+### Development Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Build the project:
+   ```bash
+   npm run build
+   ```
+4. Run tests:
+   ```bash
+   npm test
+   ```
+
+### Code Style
+- Follow TypeScript best practices
+- Use ESLint and Prettier for consistent formatting
+- Write tests for new features
+- Document public APIs with JSDoc
+
+## Changelog
+
+### v0.1.0 (2025-02-15)
+- Initial release
+- Basic market creation and trading functionality
+- TypeScript type definitions
+- Comprehensive documentation
+
+## License
+
+Apache-2.0
+
+## Support
+
+For support, please open an issue on [GitHub](https://github.com/pnp-protocol).
+
+## Acknowledgments
+- PNP team
+- Solana Team
+- Anchor Framework
+- All contributors

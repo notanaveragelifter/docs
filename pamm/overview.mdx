@@ -1,0 +1,78 @@
+---
+title: "PAMM Overview"
+description: "Virtual Liquidity AMM (PAMM) — a constant product market maker for binary prediction markets on EVM chains. No LPs, no order books, just one deposit and instant liquidity."
+---
+
+# Virtual Liquidity AMM (PAMM)
+
+PNP's **Prediction AMM (PAMM)** is a constant product market maker purpose-built for binary outcome markets on EVM chains. It provides instant, continuous liquidity from a single collateral deposit — no LP tokens, no order books, no bootstrapping problem.
+
+## Why PAMM Exists
+
+Every prediction market needs a way for traders to buy and sell outcome tokens against collateral. Existing approaches all have friction:
+
+| Approach | Problem |
+|----------|---------|
+| **Order books** | Thin markets, need active market makers, poor UX |
+| **LMSR (Logarithmic)** | Subsidy provider has unbounded loss, complex math |
+| **AMM with real LPs** | Chicken-and-egg: someone must mint both tokens to seed the pool |
+
+PAMM takes a different path. The AMM pool is **implied** from a single number — the reserve. There is no pool in the traditional sense. Liquidity depth emerges from a mathematical relationship between three on-chain values.
+
+## How It Works in 30 Seconds
+
+1. A **creator** deposits collateral (e.g. 10,000 USDC) into the contract
+2. This becomes the **reserve** `R` — the market's liquidity backbone
+3. **Virtual reserves** are derived: `V_YES = R - S_YES`, `V_NO = R - S_NO`
+4. Uniswap V2-style constant product math runs on these virtual reserves
+5. Every market starts at **50/50** — price discovery happens through trading
+6. At settlement, **winners split the entire reserve** pro-rata
+
+No LP tokens are minted. No one needs to provide both sides. One deposit creates a fully functional, continuously tradeable market.
+
+## Key Properties
+
+- **Instant liquidity** — market is tradeable the moment it's created
+- **Single-sided seeding** — creator deposits collateral, receives zero tokens
+- **Self-balancing prices** — constant product formula ensures prices always sum to 1.00
+- **Depth scales with reserve** — bigger deposit = tighter spreads, less slippage
+- **Gas efficient** — single transaction per trade, no matching engine
+- **EVM native** — deployed as Solidity contracts with ERC-1155 outcome tokens
+
+## Deployed Networks
+
+PAMM is currently deployed on:
+
+- **Monad** (testnet)
+- **Base**
+- **Polygon**
+
+The contracts are written in Solidity 0.8.28 using the Foundry framework.
+
+## Core Contracts
+
+| Contract | Role |
+|----------|------|
+| **PNPFactory** | Market creation, minting/burning outcome tokens, settlement, redemption. Holds all collateral as ERC-1155. |
+| **VirtualLiquidityLib** | Pure math library implementing the CPMM bonding curve — buy/sell calculations, quadratic solver. |
+| **FeeManager** | Accumulates protocol fees. Splits 50/50 between market creator and protocol owner after market ends. |
+
+## Who Is PAMM For?
+
+**Market creators** who want to spin up prediction markets without needing a market maker or LP pool. Deposit collateral, set a question and deadline, and you have a live market.
+
+**Partners and protocols** looking for easily bootstrappable liquidity for custom markets — sports, crypto prices, governance votes, real-world events. PAMM gives you a working AMM with a single function call.
+
+**Traders** who want to express views on binary outcomes with instant execution, transparent pricing, and on-chain settlement.
+
+<CardGroup cols={2}>
+  <Card title="How It Works" icon="gear" href="/pamm/how-it-works">
+    Virtual reserves, CPMM math, buying and selling mechanics
+  </Card>
+  <Card title="For Creators" icon="user" href="/pamm/for-creators">
+    How to create markets, what you earn, risk profile
+  </Card>
+  <Card title="Economics" icon="chart-line" href="/pamm/economics">
+    Fee structure, settlement payouts, worked examples
+  </Card>
+</CardGroup>

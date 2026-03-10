@@ -1,0 +1,198 @@
+---
+title: "How PAMM Works"
+description: "Deep dive into PNP's Virtual Liquidity CPMM — virtual reserves, constant product math, buying and selling mechanics, price dynamics, and edge cases."
+---
+
+# How PAMM Works
+
+PAMM runs a Uniswap V2-style constant product formula on **virtual reserves** — phantom pool balances derived from on-chain state. This page explains the mechanics from first principles.
+
+## The Three Numbers
+
+At any moment, a PNP market is fully described by three values:
+
+| Value | What it is |
+|-------|-----------|
+| **R** (Reserve) | Total collateral locked in the contract. Real dollars. |
+| **S_YES** (YES Supply) | Total YES tokens in circulation, held by traders. |
+| **S_NO** (NO Supply) | Total NO tokens in circulation, held by traders. |
+
+From these three numbers, we derive everything: prices, trade outputs, slippage, liquidity depth.
+
+## Virtual Reserves
+
+The core insight. We define two **virtual reserves** that we use to run constant product math:
+
+```
+V_YES = R - S_YES
+V_NO  = R - S_NO
+```
+
+Think of `V_YES` as "how much room is left before YES tokens saturate the reserve." If nobody has bought YES yet (`S_YES = 0`), then `V_YES = R` — the full reserve is available as virtual liquidity for the YES side.
+
+As traders buy YES tokens, `S_YES` grows and `V_YES` shrinks. The YES side gets "drained," making YES more expensive. This is exactly how a Uniswap pool behaves when you drain one side.
+
+**Why "virtual"?** No one deposited YES or NO tokens into a pool. The pool is a mathematical fiction derived from the reserve and circulating supplies — but it behaves identically to a real constant product AMM.
+
+## Spot Prices
+
+The price of the next infinitesimally small unit:
+
+```
+price_YES = V_NO / (V_YES + V_NO)
+price_NO  = V_YES / (V_YES + V_NO)
+```
+
+These **always sum to exactly 1.00**. This is the fundamental property of a well-formed binary prediction market — probabilities are exhaustive.
+
+**Fresh market (no trades yet):**
+
+```
+V_YES = R,  V_NO = R
+
+price_YES = R / (R + R) = 0.50
+price_NO  = R / (R + R) = 0.50
+```
+
+Every market starts at 50/50. The initial reserve determines **liquidity depth**, not starting price.
+
+## Buying Tokens
+
+When a trader pays collateral `C` to buy YES tokens, the mechanism uses a "complete set decomposition":
+
+### Step 1: Implicit Minting
+
+In any binary market, 1 YES + 1 NO = 1 unit of collateral (a "complete set"). When the trader pays `C`:
+
+- Conceptually, this mints `C` YES and `C` NO tokens
+- The trader keeps the `C` YES tokens
+- The `C` NO tokens are "sold" back to the virtual pool
+
+### Step 2: The Swap
+
+The implicit NO tokens get swapped for additional YES using constant product:
+
+```
+additional_YES = (C * V_YES) / (V_NO + C)
+```
+
+### Step 3: Total Output
+
+```
+total_YES_received = C + additional_YES
+                   = C + (C * V_YES) / (V_NO + C)
+```
+
+The trader always receives **more tokens than collateral paid** (in units). How many extra depends on the current price.
+
+### State Changes After a Buy
+
+- `R` increases by `C` (money entered the system)
+- `S_YES` increases by `total_YES_received`
+- `S_NO` stays the same (implicit NO tokens absorbed into virtual pool)
+- Prices adjust: YES becomes more expensive, NO becomes cheaper
+
+## Selling Tokens
+
+Selling is the reverse but mathematically trickier. A trader holds `T` YES tokens and wants collateral back.
+
+### The Problem
+
+To redeem collateral, you need a complete set (equal YES + NO). But the trader only has YES. So:
+
+1. Sell `x` YES tokens to the pool for NO tokens
+2. Pair remaining `(T - x)` YES with the NO received
+3. Burn the complete sets for collateral
+
+### The Quadratic
+
+Combining the swap formula with the pairing constraint gives:
+
+```
+x^2 + (V_YES + V_NO - T) * x - T * V_YES = 0
+```
+
+The positive root gives `x` (how many to swap), and `T - x` gives the collateral released.
+
+### Round-Trip Property
+
+If a trader buys YES and immediately sells back the exact tokens (ignoring fees), they get back approximately what they paid. The curve is path-independent for small trades — it doesn't "leak" value.
+
+## Liquidity Depth
+
+The initial reserve `R_0` determines **how much money it takes to move the price by a given amount**.
+
+### Small Reserve (R = 100 USDC)
+
+```
+10 USDC YES buy → price moves 50% → 54.75% (+4.75pp)
+```
+
+### Large Reserve (R = 1,000,000 USDC)
+
+```
+10 USDC YES buy → price moves 50% → ~50.0005% (negligible)
+```
+
+| Market Size | Reserve | Suitable For |
+|-------------|---------|-------------|
+| Micro | < 1,000 | Casual bets, highly volatile |
+| Small | 1,000 - 10,000 | Niche markets, moderate impact |
+| Medium | 10,000 - 100,000 | Popular events, good trading experience |
+| Large | 100,000 - 1,000,000 | High-profile markets, institutional depth |
+
+**Deep liquidity = stable prices.** The creator's initial deposit directly controls this.
+
+## Price Dynamics
+
+### What Moves Prices
+
+YES price **increases** when:
+- Someone buys YES (increases `S_YES`, decreases `V_YES`)
+
+YES price **decreases** when:
+- Someone buys NO (increases `S_NO`, decreases `V_NO`)
+- Someone sells YES (decreases both `R` and `S_YES`, net effect raises `V_YES` relative to `V_NO`)
+
+### Slippage
+
+The displayed price is the **marginal** price — what the next tiny unit costs. Larger trades experience slippage because each unit purchased moves the price before the next unit is priced.
+
+Slippage increases with:
+- Larger trade sizes
+- Smaller reserves
+- Prices near 0 or 1 (one virtual reserve is thin)
+
+### Self-Correcting at Extremes
+
+At 50/50 the market is equally liquid on both sides. At 90/10:
+
+- Buying more YES is expensive and high-impact (thin `V_YES`)
+- Buying NO is cheap and low-impact (thick `V_NO`)
+
+This is desirable. Markets near consensus should be hard to push further and easy to push back toward center.
+
+## Edge Cases
+
+### Price Bounds
+
+Prices can never reach exactly 0 or 1 while the market is active. As `V_YES` approaches zero, the price asymptotically approaches 1 but never reaches it. The constant product formula provides natural resistance at extremes.
+
+### One-Sided Activity
+
+If only YES is bought and NO supply stays at zero:
+
+```
+V_NO = R - 0 = R  (always equals full reserve)
+V_YES = R - S_YES  (shrinks as YES is bought)
+```
+
+This works fine. If someone finally buys NO, they get excellent prices because `V_NO` is large. The market doesn't need activity on both sides to function.
+
+### Zero Trading Activity
+
+If a market is created, nobody trades, and it expires — the creator calls `claimRemainingReserve()` and gets their full deposit back. No loss, no gain.
+
+### First-Mover Advantage
+
+The first trader always gets the best deal — buying at 50/50 when the full virtual reserve is available. This is inherent to all AMM-based markets and is desirable: it rewards early participants who take the risk of entering an untested market.
