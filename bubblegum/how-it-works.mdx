@@ -1,0 +1,146 @@
+---
+title: "How Bubblegum Works"
+description: "The mechanics behind Bubblegum — bonding curves that feed prediction markets, two independent price axes, and automatic graduation to permanent liquidity."
+---
+
+# How Bubblegum Works
+
+Bubblegum wires together two DeFi primitives — a **bonding curve** and a **prediction market AMM** — into a single atomic system. This page explains how they connect.
+
+## The Architecture
+
+Every Bubblegum market consists of two linked components:
+
+```
+┌─────────────────────┐         ┌─────────────────────┐
+│   BONDING CURVE     │         │   PREDICTION MARKET  │
+│                     │         │   (CPMM)             │
+│   SOL ←→ $TICKER    │────────→│   $TICKER ←→ YES/NO  │
+│                     │         │                      │
+│   Determines:       │         │   Determines:        │
+│   Token price       │         │   Outcome odds       │
+│   Market depth      │         │   YES/NO prices      │
+└─────────────────────┘         └──────────────────────┘
+```
+
+When you buy YES on a Bubblegum market, two things happen in a single transaction:
+
+1. Your SOL enters the bonding curve and buys $TICKER
+2. That $TICKER flows into the prediction market and mints YES tokens for you
+
+You never touch $TICKER directly. From your perspective, you're just buying YES with SOL. But under the hood, every trade simultaneously:
+- Moves the **token price** on the bonding curve
+- Moves the **outcome odds** on the prediction market
+- Deepens the **liquidity** available for future traders
+
+## The Bonding Curve
+
+The bonding curve is a constant-product automated market maker that prices $TICKER against SOL. It works like any bonding curve you've used before:
+
+- **Early buyers get more tokens per SOL** (price starts low)
+- **Each buy pushes the price up** (constant product math)
+- **Sells push the price back down** (fully reversible)
+- **No external liquidity needed** — the curve IS the market maker
+
+The curve launches with virtual reserves that provide initial depth. As real SOL flows in, the price rises along a predictable curve. Every market uses the same curve parameters, so pricing behavior is consistent and predictable across all Bubblegum markets.
+
+### What the Curve Controls
+
+The bonding curve determines:
+- **$TICKER / SOL price** — how expensive the market's token is
+- **Market depth** — how much SOL is backing the prediction market
+- **Graduation progress** — how close the market is to graduating
+
+It does NOT determine:
+- YES/NO odds (that's the prediction market's job)
+- Who wins at settlement (that's the oracle's job)
+
+## The Prediction Market (CPMM)
+
+The prediction market uses a **Virtual Liquidity CPMM** — the same constant-product mechanism used in PNP's PAMM, adapted for Solana with SPL tokens.
+
+When the market launches, a portion of the token supply is deposited into the CPMM as initial reserve. This creates a 50/50 starting point for YES and NO odds.
+
+As traders buy YES or NO:
+- **Buying YES** increases the YES price and decreases NO
+- **Buying NO** increases the NO price and decreases YES
+- **Prices always sum to 1.00** (100%)
+
+The CPMM uses virtual reserves derived from on-chain state — no LP tokens, no external pool. The reserve grows as more $TICKER enters from bonding curve trades, which means **liquidity depth increases with trading activity**.
+
+### Price Discovery
+
+Both prices (token and outcome) are discovered independently:
+
+| A whale buys a lot of YES | Token price goes up (SOL entered the curve). YES odds go up (CPMM shifted). |
+|---|---|
+| Equal YES and NO buying | Token price goes up (SOL entered). Odds stay near 50/50 (balanced CPMM). |
+| Someone sells all their YES | Token price goes down (SOL left the curve). YES odds go down. |
+
+This means you can express nuanced views:
+- "This question is important but I don't know the answer" → buy $TICKER, don't trade YES/NO
+- "I'm sure about the outcome but the market is overhyped" → sell $TICKER, buy the outcome you believe in
+- "I'm bullish on everything" → buy YES with SOL (naturally does both)
+
+## Graduation
+
+When enough SOL has entered the bonding curve, the market **graduates**. This is a one-time, irreversible transition.
+
+### What Happens at Graduation
+
+1. The bonding curve locks — no more curve trades
+2. A reserved portion of $TICKER supply pairs with the collected SOL
+3. Together they seed a **permanent AMM pool** with locked liquidity
+4. $TICKER now trades freely on the open market
+
+### After Graduation
+
+- **$TICKER** trades on its own AMM pool — anyone can buy/sell freely
+- **The prediction market keeps running** — YES/NO trading continues until settlement
+- Users can buy $TICKER on the open market and route it into the CPMM for directional bets
+- The token lives on even after the prediction market resolves
+
+### Why Graduation Matters
+
+Graduation creates a **permanent secondary market** for the token. Unlike traditional prediction markets where the market disappears after resolution, Bubblegum markets leave behind a tradeable on-chain token. The graduated AMM pool has its liquidity permanently locked — it can never be rugged or drained.
+
+## The Full Lifecycle
+
+```
+1. CREATION
+   Creator submits a question + ticker
+   → Token mint, bonding curve, and prediction market created atomically
+   → Market opens at 50/50 odds
+
+2. CURVE PHASE
+   Traders buy YES/NO with SOL
+   → SOL enters bonding curve → $TICKER flows to CPMM → YES/NO minted
+   → Token price and odds move independently
+   → Curve progress bar fills toward graduation
+
+3. GRADUATION
+   Bonding curve reaches threshold
+   → $TICKER + SOL seed a permanent AMM pool
+   → Liquidity locked forever
+   → $TICKER trades freely
+
+4. POST-GRADUATION
+   Prediction market keeps running
+   → Traders buy/sell YES/NO through the AMM pool
+   → $TICKER is also tradeable independently
+
+5. SETTLEMENT
+   After the market's deadline, the outcome is declared
+   → Winners redeem their YES/NO tokens for $TICKER from the CPMM
+   → A portion of remaining $TICKER goes to the creator
+   → A portion is burned (deflationary)
+   → $TICKER continues trading on its AMM pool
+```
+
+## Why This Design Works
+
+The bonding curve solves the **cold-start problem**. Traditional prediction markets need someone to put up capital before trading can begin. Bubblegum's curve provides liquidity from the first trade — no subsidies, no market makers, no manual seeding.
+
+The two-axis design creates a **natural attention market**. Token price acts as a proxy for how much the world cares about a question. This is information that traditional prediction markets can't capture — they only tell you the odds, not how important the question is.
+
+Graduation creates **permanence**. The token outlives the prediction. Communities can form around tokens. Resolved markets leave behind tradeable artifacts. This turns prediction markets from ephemeral events into lasting on-chain assets.

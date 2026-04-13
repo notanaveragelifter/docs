@@ -1,0 +1,113 @@
+---
+title: "Creating Markets"
+description: "How to launch a Bubblegum prediction market — choose a question, pick a ticker, and go live in seconds. No capital required."
+---
+
+# Creating Markets
+
+Launching a Bubblegum market takes about 30 seconds. You don't need seed capital, LP tokens, or a market maker. Just a question and a ticker.
+
+## What You Need
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Question** | The binary prediction question. Should have a clear YES/NO answer. | "Will SOL hit $500 by end of 2025?" |
+| **Ticker** | A short symbol for the market's token (like a stock ticker). | $SOL500 |
+| **Deadline** | When the market closes and becomes eligible for settlement. | December 31, 2025 |
+
+That's it. No liquidity deposit. No collateral.
+
+## What Happens When You Create
+
+When you submit your market, a single atomic transaction on Solana:
+
+1. **Creates your token** — a brand new SPL token with your chosen ticker and metadata
+2. **Launches the bonding curve** — $TICKER is immediately tradeable against SOL
+3. **Opens the prediction market** — YES and NO outcome tokens are ready, starting at 50/50 odds
+4. **Seeds initial reserve** — a portion of the token supply is deposited into the prediction market to provide starting depth
+
+Your market is **live instantly**. Anyone can start trading YES or NO the moment the transaction confirms.
+
+## Writing Good Questions
+
+The best Bubblegum markets have questions that are:
+
+<AccordionGroup>
+  <Accordion title="Binary and unambiguous">
+    The answer must clearly be YES or NO. Avoid subjective questions.
+
+    **Good:** "Will Bitcoin hit $200,000 before January 1, 2026?"
+    **Bad:** "Will crypto have a good year?"
+  </Accordion>
+
+  <Accordion title="Time-bounded">
+    Every question needs a clear deadline. This is when the market closes and gets settled.
+
+    **Good:** "Will Apple release AR glasses by Q4 2025?"
+    **Bad:** "Will Apple ever release AR glasses?"
+  </Accordion>
+
+  <Accordion title="Verifiable">
+    The outcome should be checkable against a public source of truth.
+
+    **Good:** "Will the US Federal Reserve cut rates at the June 2025 FOMC meeting?"
+    **Bad:** "Will the economy improve?"
+  </Accordion>
+
+  <Accordion title="Interesting">
+    Markets that attract attention attract traders. Traders create liquidity. Liquidity creates better prices. Better prices attract more traders.
+
+    Think about what crypto twitter, your community, or the broader public cares about right now.
+  </Accordion>
+</AccordionGroup>
+
+## Choosing a Ticker
+
+Your ticker becomes the identity of your market's token. Pick something:
+
+- **Short** — 3 to 8 characters works best
+- **Memorable** — people will share it and talk about it
+- **Relevant** — it should hint at what the market is about
+
+| Question | Good Ticker | Why |
+|----------|-------------|-----|
+| "Will SOL hit $500?" | $SOL500 | Clear, descriptive |
+| "Will Trump win 2028?" | $TRUMP28 | Recognizable, time-specific |
+| "Will ETH flip BTC?" | $ETHFLIP | Catchy, describes the event |
+
+## After Creation
+
+Once your market is live:
+
+- **You start earning fees** — every trade on your market sends a cut to your wallet
+- **The bonding curve fills** — as traders buy in, the curve progress bar advances toward graduation
+- **Odds shift** — YES/NO prices move based on trader sentiment
+- **You can trade too** — creators can trade on their own markets
+
+You don't need to do anything to maintain the market. Liquidity is automatic, pricing is automatic, and settlement happens after the deadline.
+
+## Market Lifecycle
+
+Your market goes through these phases:
+
+<Steps>
+  <Step title="Live on Curve">
+    Traders buy and sell YES/NO through the bonding curve. Token price and odds move independently. The curve progress bar shows how close the market is to graduation.
+  </Step>
+  <Step title="Graduation">
+    When the bonding curve fills up, the token graduates to its own permanent AMM pool. Liquidity is locked forever. The prediction market keeps running.
+  </Step>
+  <Step title="Trading Continues">
+    After graduation, traders can buy $TICKER on the open AMM pool and trade YES/NO through the prediction market. Both markets run independently.
+  </Step>
+  <Step title="Settlement">
+    After the deadline passes, the market is settled with the correct outcome. Winners redeem their tokens. You receive your share of remaining reserve.
+  </Step>
+</Steps>
+
+## Tips for Creators
+
+- **Timely questions perform best.** Markets tied to upcoming events (elections, product launches, macro data) attract more attention than distant hypotheticals.
+- **Share your market.** The more people see it, the more they trade. The more they trade, the more you earn.
+- **Controversial questions get volume.** If people disagree, they'll trade against each other. Balanced markets are the healthiest.
+- **Watch the curve progress.** Markets approaching graduation often get a surge of attention — that's when the flywheel kicks in hardest.

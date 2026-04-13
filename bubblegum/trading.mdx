@@ -1,0 +1,116 @@
+---
+title: "Trading on Bubblegum"
+description: "How to buy and sell YES/NO prediction outcomes on Bubblegum markets using SOL — trading mechanics, slippage, and what happens at settlement."
+---
+
+# Trading on Bubblegum
+
+Trading on Bubblegum is simple: **pick a side (YES or NO), put in SOL, get outcome tokens.** If you're right, you win. If you're wrong, you lose.
+
+## Buying YES or NO
+
+To take a position on a Bubblegum market:
+
+1. **Choose your side** — YES or NO
+2. **Enter your SOL amount** — how much you want to put in
+3. **Confirm the trade** — one transaction, done
+
+Under the hood, your SOL flows through the bonding curve and into the prediction market. You receive YES or NO decision tokens in your wallet. The whole thing happens in a **single Solana transaction** — fast, atomic, no partial fills.
+
+### What You're Getting
+
+When you buy YES tokens, you're buying a claim that pays out if the answer to the market question is YES. Same for NO.
+
+- **If your side wins:** your tokens are redeemable for a pro-rata share of the market's reserve
+- **If your side loses:** your tokens are worth nothing
+
+The earlier you buy, the cheaper the tokens are. As more people buy the same side, the price goes up and you get fewer tokens per SOL. This is standard bonding curve and AMM behavior — early conviction is rewarded.
+
+### Price You See vs. Price You Get
+
+The displayed price (e.g., YES at 65%) is the **spot price** — what the next tiny unit costs. If you're putting in a meaningful amount, you'll experience **slippage**: each unit you buy pushes the price slightly before the next unit is priced.
+
+Slippage is higher when:
+- Your trade is large relative to the market's depth
+- The market is new (less liquidity)
+- Odds are already extreme (90/10 has thin liquidity on the expensive side)
+
+You set a **minimum tokens out** (slippage tolerance) when you trade. If the execution would give you fewer tokens than your minimum, the transaction reverts. You never get a worse deal than you agreed to.
+
+## Selling Your Position
+
+Changed your mind? You can sell your YES or NO tokens back for SOL at any time before settlement.
+
+1. **Select your tokens** — choose how many YES or NO to sell
+2. **Confirm the trade** — tokens burn, SOL returns to your wallet
+
+The amount of SOL you receive depends on the current market state. If the odds have moved in your favor since you bought, you profit. If they've moved against you, you take a loss.
+
+**You don't have to wait for settlement to exit.** The bonding curve and prediction market provide continuous liquidity. You can always sell — though deep in one direction, the slippage may be significant.
+
+## Reading the Market
+
+Every Bubblegum market shows you:
+
+| Indicator | What It Means |
+|-----------|---------------|
+| **YES / NO Split** | Current odds. YES at 70% means the crowd thinks there's a 70% chance of YES. |
+| **Token Price** | How much the market's token costs in SOL. Reflects attention and expected volume. |
+| **Curve Progress** | How full the bonding curve is. At 100%, the token graduates to its own AMM pool. |
+| **Volume** | Total SOL traded on this market. Higher volume = more liquid, tighter spreads. |
+| **Holders** | How many wallets hold positions. More holders = broader participation. |
+| **Time Remaining** | How long until the market closes for settlement. |
+
+### The Two Prices
+
+Remember that Bubblegum markets have two independent prices:
+
+- **Token price** can go up while odds stay flat (people think the question is important but don't know the answer)
+- **Odds can shift** while token price stays flat (new information about the outcome, but same level of attention)
+
+This means you can be strategic. If you think a question is about to go viral but you're unsure about the answer, you could buy the token without taking a YES/NO position.
+
+## Fees
+
+Every trade on Bubblegum has a **1% fee**, split evenly:
+
+| Recipient | Share | Description |
+|-----------|-------|-------------|
+| **Market Creator** | 0.5% | Goes directly to the wallet that created the market |
+| **Protocol** | 0.5% | Goes to the Bubblegum protocol |
+
+Fees are deducted from your SOL before it enters the bonding curve. If you put in 1 SOL, 0.99 SOL enters the curve.
+
+After graduation, trades on the AMM pool have their own fee schedule (separate from the prediction market fees).
+
+## Settlement
+
+After the market's deadline passes, the outcome is declared:
+
+1. **The market settles** — an authorized settler declares YES or NO as the winner
+2. **Winners redeem** — if you hold winning tokens, you can burn them for your share of the reserve
+3. **Losers get nothing** — losing tokens become worthless
+
+### Payout Calculation
+
+Winners split the entire prediction market reserve proportionally:
+
+```
+your_payout = (your_tokens / total_winning_supply) * total_reserve
+```
+
+The reserve includes collateral from both winning and losing sides. So if you're on the winning side of a balanced market, you could receive significantly more than you put in.
+
+### After Settlement
+
+- **$TICKER continues trading** — even after the prediction resolves, the token lives on its AMM pool (if graduated)
+- **A portion of remaining reserve goes to the creator**
+- **A portion is burned** — reducing token supply permanently
+
+## Trading Tips
+
+- **Early positions are cheapest.** The first traders into a new market get the best prices. If you spot a market early and have conviction, moving first pays.
+- **Watch for graduation.** Markets approaching graduation often see increased activity. The curve filling up creates natural momentum.
+- **Don't ignore the token price.** If you're bullish on a market's attention but unsure about the outcome, the token itself is a tradeable asset.
+- **Set slippage tolerance.** Especially on newer or less liquid markets, set a reasonable minimum tokens out to protect against price movement.
+- **You can exit anytime.** Don't feel locked in until settlement. The curve provides continuous liquidity for selling.

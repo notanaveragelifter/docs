@@ -83,6 +83,21 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Bubblegum",
+        "groups": [
+          {
+            "group": "Bubblegum",
+            "pages": [
+              "bubblegum/overview",
+              "bubblegum/how-it-works",
+              "bubblegum/creating-markets",
+              "bubblegum/trading",
+              "bubblegum/for-creators"
+            ]
+          }
+        ]
       }
     ],
     "global": {
