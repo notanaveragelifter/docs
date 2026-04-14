@@ -1,104 +1,52 @@
 ---
-title: "Core features"
-description: "Core features: creator fees, permissionless launches, LLM oracle settlement, bonding curve liquidity, and revenue sharing."
+title: "Core Features"
+description: "Core features of PNP Exchange: creator revenue, permissionless launches, LLM oracle settlement, bonding curve liquidity, and the PNP DAO."
 ---
 
-### —> Creator fees
+## Creator Revenue
 
-Creators earn 50% of the 1% trading fee their markets generate. As participants trade on the bonding curve, a share of volume accrues to the market creator—rewarding high‑quality markets and ongoing curation.
+Creators earn **30% of the 1% trading fee** their markets generate. As participants trade on the bonding curve, a share of volume accrues to the market creator — rewarding high-quality markets and ongoing curation.
 
-- 1% fee on buys and sells
 - Earnings scale with market engagement
 - Transparent on-chain accrual
+- No minimum volume thresholds
 
+## Permissionless Launches
 
-### —> Permissionless launches
-Launch a market in seconds with a Solana wallet and USDC—no listings, no approvals. Markets become tradeable immediately after creation.
+Launch a market in seconds with a Solana wallet and USDC — no listings, no approvals. Markets become tradeable immediately after creation.
 
-### —> LLM Oracle settlement
+## LLM Oracle Settlement
 
-Markets settle via structured, real‑time LLM evaluation—no token‑weighted dispute votes or third‑party resolution councils. Models analyze on‑chain parameters and curated off‑chain evidence (e.g., price feeds, official accounts, articles) to produce deterministic YES/NO outcomes that anyone can submit on‑chain.
+Markets settle via structured, real-time LLM evaluation — no token-weighted dispute votes or third-party resolution councils. The oracle analyzes authoritative sources, extracts specific data points, and computes deterministic YES/NO outcomes that are committed on-chain.
 
-- Reduces manipulation risk from whale voting
-- Programmatic evidence collection and auditability
+- Evidence-first evaluation with time-bounded lookups
+- Multi-provider consensus reduces single-model bias
 - Permissionless settlement after deadlines
 
-### —> Prediction Market DEX Launchpad 
+For markets outside the oracle's scope, the **PNP DAO** serves as the settlement backstop — DAO members review the evidence and vote on the outcome. 20% of all trading fees fund this responsibility.
 
-Launch a prediction market on any topic: state the question, and our AI helps derive resolvability criteria. PNP bundles market creation, curve‑based trading, and oracle settlement into a single, seamless protocol—no external order book, no third‑party disputes, no manual hand‑offs.
+## Prediction Market DEX Launchpad
 
+Launch a prediction market on any topic: state the question, and our AI helps derive resolvability criteria. PNP bundles market creation, curve-based trading, and oracle settlement into a single protocol — no external order book, no third-party disputes, no manual hand-offs.
 
-- One flow: create → trade → earn
+- One flow: create, trade, earn
 - Unified UX for creators, traders, and resolvers
 - On-chain primitives designed to compose together
 
+## On-Chain Bonding Curve Trading
 
- 
+All trading uses an on-chain bonding curve. Prices adjust continuously with supply — so you can always buy or sell outcome tokens without needing counterparties or an order book.
 
-### —No off-chain orderbook
-
-All trading uses an on‑chain bonding curve. Prices adjust continuously with supply—so you can always buy or sell outcome tokens without needing counterparties or an order book.
-
-- Bonding‑curve AMM (parameters iterate over time)
-- Predictable pricing mechanics
+- Bonding-curve AMM with predictable pricing mechanics
 - Works even for long-tail, niche markets
+- Always tradeable — guaranteed liquidity from creation
 
-### 🌊 Bonding Curve Liquidity
+## Fee Distribution
 
-**Guaranteed liquidity for every market**
+PNP charges a 1% fee on all trading volume, distributed to reward the ecosystem:
 
-Our Pythagorean bonding curve ensures that every prediction market has built-in liquidity from the moment it's created. No need to wait for market makers or worry about thin order books.
-
-<Card title="How it works" icon="chart-line">
-  Token prices automatically adjust based on supply changes through mathematical formulas, ensuring fair price discovery and constant liquidity availability.
-</Card>
-
-**Key Benefits:**
-- Always tradeable markets
-- Automatic price discovery
-- No liquidity provider risk
-- Fair and transparent pricing
-
-
-### 💎 Fair Launch Tokenomics
-
-**True community ownership from day one**
-
-PNP Exchange launched with complete fairness—no team allocation, no private sales, no reserved tokens.
-
-**Distribution Breakdown:**
-- 0% Team Allocation
-- 0% Private Sales  
-- 0% Reserved Tokens
-- 100% Community Distribution
-
-### 💰 Revenue Sharing Model
-
-**Sustainable economics that reward all participants**
-
-Our 1% trading fee is distributed across the ecosystem to ensure long-term sustainability and growth.
-
-**Fee Distribution:**
-- 50% → Market Creators
-- 15% → Platform Operations
-- 15% → $PNP Token Holders
-- 10% → Referral Program
-- 10% → Insurance Fund
-
-### 🏗️ Permissionless Market Creation
-
-**Create markets for anything, instantly**
-
-No permissions, approvals, or minimum capital requirements. If you can imagine an event worth betting on, you can create a market for it.
-
-**Market Types Supported:**
-- Price predictions for any token
-- Social media events and announcements  
-- Sports outcomes
-- Political events
-- Custom questions with trusted resolution sources
-
-
-
-
-
+| Recipient | Share |
+|-----------|-------|
+| **Market Creators** | 30% |
+| **PNP DAO** (settlement backstop) | 20% |
+| **Protocol & Trading Incentives** | 50% |

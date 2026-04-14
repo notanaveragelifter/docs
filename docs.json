@@ -38,7 +38,6 @@
             "pages": [
               "quickstart",
               "development",
-              "tokenomic",
               "bonding",
               "module"
             ]
@@ -64,8 +63,7 @@
           {
             "group": "Tools & Integrations",
             "pages": [
-              "sdk/overview",
-              "pnp-agent"
+              "sdk/overview"
             ]
           }
         ]

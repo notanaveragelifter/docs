@@ -1,71 +1,62 @@
 ---
-title: "Oracle"
-description: "How PNP settles markets using LLM oracles with evidence-first prompting, time-bounded lookups, and multi-provider consensus."
+title: "Oracle Settlement"
+description: "How PNP settles prediction markets using LLM oracles with evidence-first evaluation, time-bounded lookups, and PNP DAO as the backstop."
 ---
 
 ## Oracle Overview
 
-A pragmatic, LLM‑assisted oracle that settles prediction markets with verifiable, time‑bounded evidence. It blends multiple AI providers with a strict settlement rubric, and commits outcomes on‑chain when decisive—or safely triggers refunds when ambiguity remains.
+PNP settles prediction markets with an **LLM-assisted oracle** — a structured, evidence-first system that evaluates real-world outcomes and commits results on-chain. No token-weighted dispute votes. No third-party resolution councils.
 
-- **What it does**: Decides YES/NO market outcomes or identifies non‑resolvable/ambiguous cases.
-- **How it thinks**: Evidence‑first prompts that check listed sources, extract specific numbers, and compute thresholds explicitly—minimizing “vibes” answers.
-- **Where it runs**: Backs market platforms with an API layer and a Solana settlement module.
- - **Providers**: Uses Perplexity and Grok 4 for real‑time, wide‑coverage retrieval. Their unbiased, up‑to‑date context makes this oracle perfectly suited for prediction markets.
+- **What it does**: Decides YES/NO market outcomes or identifies non-resolvable/ambiguous cases.
+- **How it decides**: Evidence-first evaluation that checks authoritative sources, extracts specific data points, and computes thresholds explicitly — not vibes, not summaries.
+- **Where it runs**: Backs PNP markets with an API layer and a Solana settlement module.
 
-## Two‑Step Workflow
+## Two-Step Settlement
 
-### 1) Criteria generation (filtering and clarity)
-After market creation, the oracle generates or validates market‑specific settlement criteria before the market can be made tradeable :
-- **Resolvability gate**: Confirms whether the question is objectively answerable by the deadline.
-- **Authoritative sources**: Builds a concise list of official or governing‑body sources to check later.
-- **Objective rubric**: Clarifies exact metrics (scores, counts, prices, timestamps) and how to compute the outcome.
-- **Token/coin markets**: For coin markets, criteria incorporate token‑specific context and data pathways without exposing internal data methods.
+### 1. Criteria Generation (Before Trading)
 
-Result: Markets flagged as non‑resolvable are safely filtered (and can be routed to refund paths). Resolvable markets move to step 2.
+After market creation, the oracle generates or validates settlement criteria before the market becomes tradeable:
 
-### 2) Settlement (decision and on‑chain finalization)
-At/after market end:
-- **Time‑bounded evidence**: AI providers are restricted to information available up to the market’s deadline.
-- **Source‑checking**: The oracle checks the pre‑listed resolution sources first. It extracts the numbers/facts that resolve the question.
-- **Explicit computation**: Shows the math or threshold logic (e.g., totals, comparisons), then decides YES/NO—or returns ambiguous only if truly unverifiable.
-- **Consensus mode (optional)**: Multiple providers can be queried; if they agree, we finalize with higher confidence. If they conflict, we prefer authoritative sources and fall back safely.
-- **Finalization**: When decisive, the on‑chain module commits the result; when ambiguous/non‑resolvable, a dispute path is enabled.
+- **Resolvability gate** — confirms whether the question is objectively answerable by the deadline
+- **Authoritative sources** — builds a list of official sources to check at settlement time (governing bodies, official accounts, price feeds)
+- **Objective rubric** — clarifies exact metrics, thresholds, and how to compute the outcome
 
-## Why This Oracle Gets Markets Right
+Markets flagged as non-resolvable are filtered out and routed to refund paths. Only resolvable markets go live.
 
-Purpose‑built for prediction markets where clarity, deadlines, and fairness matter most.
+### 2. Settlement (At/After Deadline)
 
-- **Evidence‑first prompting**: Requires checking the listed sources, extracting exact values, and doing the calculation explicitly—not just summarizing news.
-- **Time‑bounded lookups**: Date filters prevent leakage from after‑deadline information.
-- **Authoritative‑source precedence**: Official databases and governing bodies outrank general reporting. Conflicts use a clear precedence policy.
-- **Deterministic rubric**: Criteria define what counts, how to count it, and how to compare it—before any decision is made.
-- **Multi‑provider optionality**: Uses multiple AI providers and can require agreement to reduce single‑model bias.
+When the market's end time passes:
 
-## Operational Flow
+- **Time-bounded evidence** — the oracle only considers information available up to the market's deadline. No hindsight bias.
+- **Source-checking** — checks the pre-listed resolution sources first, extracts the numbers or facts that resolve the question
+- **Explicit computation** — shows the logic (totals, comparisons, thresholds), then decides YES or NO
+- **Multi-provider consensus** — multiple AI providers can be queried. If they agree, settlement proceeds with high confidence. If they conflict, authoritative sources take precedence.
+- **Finalization** — when decisive, the result is committed on-chain. When ambiguous or non-resolvable, a dispute/refund path is enabled.
 
-- **Before end time**
-  - Run criteria generation for a batch of markets.
-  - Mark resolvable vs. non‑resolvable and store resolution sources.
-- **At/after end time**
-  - Execute settlement analysis with time‑bounded evidence.
-  - If decisive, finalize on‑chain; otherwise, enable refunds.
-- **Admin safety**
-  - Sensitive write actions are gated; emergency refund flows are supported.
-  - Many test endpoints are disabled in production.
+## PNP DAO Settlement
 
-## Non‑Technical Pitch
+Not every question fits neatly into structured evaluation. For markets that fall **outside the oracle's scope** — subjective questions, edge cases, ambiguous outcomes, or situations where the oracle cannot reach a decisive answer — the **PNP DAO** steps in as the settlement backstop.
 
-- **Fair and transparent**: Decisions cite sources and show the arithmetic behind the outcome.
-- **Deadline‑honoring**: Uses information available before the market closes—no hindsight bias.
-- **Robust and pragmatic**: Human‑like reasoning that behaves like a careful adjudicator, not a chatbot.
-- **Multi‑model resilience**: Optional consensus reduces brittleness; disagreements trigger safe fallbacks.
-- **On‑chain finality with safety nets**: When clear, we settle; when unclear, refunds are enabled fast.
+### How It Works
 
-## Oracle Roadmap
+- The oracle attempts settlement first using its standard two-step process
+- If the oracle returns an ambiguous or inconclusive result, the market is escalated to the DAO
+- **PNP DAO members** review the evidence and vote on the outcome
+- The DAO's decision is final and committed on-chain
 
-- Ongoing upgrades to criteria templates, source‑precedence policies, and time‑bounded retrieval.
-- Expanding support for more market types: token/coin price markets, sports, politics, social/media events, on‑chain protocol events, and custom rubric‑defined questions.
-- Deeper integration with Perplexity and Grok 4, plus additional MCP connectors for domain‑specific evidence.
-- Path to decentralization: optional operator network reaching consensus prior to finalization.
+### Why a DAO Backstop?
 
+- **Coverage** — some questions are inherently subjective or context-dependent. An LLM can't always adjudicate nuance.
+- **Trust** — human consensus as the final layer ensures no market goes unsettled indefinitely
+- **Accountability** — 20% of trading fees are allocated to the DAO, compensating members for the responsibility of being the last line of settlement
 
+The DAO doesn't replace the oracle — it catches what the oracle can't. The vast majority of markets settle automatically. The DAO exists for the edge cases.
+
+## Why This Oracle Works
+
+- **Evidence-first** — requires checking listed sources and extracting exact values, not just summarizing headlines
+- **Time-bounded** — date filters prevent leakage from after-deadline information
+- **Source precedence** — official databases and governing bodies outrank general reporting
+- **Deterministic rubric** — criteria define what counts, how to count it, and how to compare it before any decision is made
+- **Multi-provider resilience** — multiple AI providers reduce single-model bias; disagreements trigger safe fallbacks
+- **DAO backstop** — human consensus for edge cases the oracle can't handle
