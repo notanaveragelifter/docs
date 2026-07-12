@@ -1,329 +1,234 @@
 ---
 title: "Create a Market"
-description: "Step-by-step guides for creating V2 AMM, P2P, Twitter, YouTube, and custom oracle prediction markets using the PNP SDK."
+description: "Create every type of PnP market with pnp-core — parimutuel (P2P) and Pythagorean (AMM) markets, with general, coin, or YouTube resolution and optional custom odds."
 ---
 
-# How to Create a Market
+Markets vary along two axes — a **liquidity model** and a **resolution kind**. This page has a
+copy-pasteable script for each combination the SDK exposes.
 
-This section provides complete working scripts for creating prediction markets using the PNP SDK. There are two types of markets you can create:
+| Liquidity model | Namespace | Creator's role |
+|-----------------|-----------|----------------|
+| **Parimutuel (P2P)** | `client.p2p` | Seeds **one side**; others take the opposite side. Winners split the pot. |
+| **Pythagorean (AMM)** | `client.amm` | Seeds **liquidity**; traders buy YES/NO against the pool. |
 
-1. **V2 AMM Markets**: Traditional automated market maker (AMM) pools where liquidity is provided upfront
-2. **P2P Markets**: Peer-to-peer markets where the creator takes a position on one side
+<Info>
+All amounts are in **base units**. Examples use `uiToBaseUnits(100, 6)` → `100_000000n` for
+100 USDC. `endTime` accepts a `Date`, or unix-seconds as `number` / `bigint` / `BN`. `creator`
+defaults to the signer; `collateralMint` defaults to the network's default (USDC on mainnet).
+</Info>
 
-## Creating a V2 AMM Market
+## Parimutuel (P2P) markets
 
-V2 markets use an AMM model where you provide initial liquidity that gets split between YES and NO tokens. This script demonstrates how to create a V2 market with USDC as collateral.
+### General P2P market
 
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from 'pnp-sdk';
+The creator backs one side; everyone else takes the other side with [`client.p2p.buy`](/sdk/trading).
+Settlement uses the PnP protocol oracle, and odds default to 1:1.
 
-// Configuration
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+```ts
+import { PnpClient, uiToBaseUnits } from "pnp-core";
 
-async function main() {
-  // Initialize client with private key
-  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+const client = PnpClient.mainnet({ wallet });
 
-  // Market parameters
-  const question = 'Will Bitcoin reach $100K by end of 2025?';
-  const initialLiquidity = 1_000_000n; // 1 USDC (6 decimals)
-  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
-  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
+const res = await client.p2p.createMarket({
+  question: "Will BTC close above $100k on Dec 31, 2026?",
+  initialAmount: uiToBaseUnits(100, 6), // seed 100 USDC on YES
+  side: "yes",
+  endTime: new Date(Date.now() + 30 * 864e5), // ~30 days
+});
 
-  // Create the market
-  const result = await client.market.createMarket({
-    question,
-    initialLiquidity,
-    endTime,
-    baseMint: collateralMint,
-  });
-
-  console.log('Market created successfully!');
-  console.log('Signature:', result.signature);
-  console.log('Market Address:', result.market.toBase58());
-}
-
-main().catch(console.error);
+console.log("market id:  ", res.marketId.toString());
+console.log("market PDA: ", res.market.toBase58());
+console.log("YES / NO:   ", res.yesMint.toBase58(), res.noMint.toBase58());
+console.log("signature:  ", res.signature);
 ```
 
-**Key Points for V2 Markets:**
-- Initial liquidity is split equally between YES and NO tokens in the AMM pool
-- The creator doesn't take a position; they provide liquidity for others to trade against
-- Use `client.market.createMarket()` for V2 markets
+### P2P market with custom odds
 
-## Creating a P2P Market
+Pass `oddsBps` (100–9900) to price the creator's side away from 1:1. `2500` bps sets the
+creator's side at 25% implied probability, so takers on the other side earn a larger share of
+the pot. Setting odds creates the market **extension PDA** (returned as `res.extension`).
 
-P2P markets are peer-to-peer markets where the creator takes a position on one side (YES or NO) with a specified cap. This script demonstrates how to create a P2P market.
-
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from 'pnp-sdk';
-
-// Configuration
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
-
-async function main() {
-  // Initialize client with private key
-  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
-
-  // Market parameters
-  const question = 'Will I get 1 million dollars by the end of 2025';
-  const side = 'yes'; // 'yes' or 'no'
-  const initialAmount = 1_000_000n; // 1 USDC (6 decimals)
-  const creatorSideCap = 5_000_000n; // 5 USDC max for creator's side
-  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
-  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
-
-  // Create P2P market
-  const result = await client.createP2PMarketGeneral({
-    question,
-    initialAmount,
-    side,
-    creatorSideCap,
-    endTime,
-    collateralTokenMint: collateralMint,
-  });
-
-  console.log('P2P market created successfully!');
-  console.log('Signature:', result.signature);
-  console.log('Market Address:', result.market);
-  console.log('Yes Token Mint:', result.yesTokenMint);
-  console.log('No Token Mint:', result.noTokenMint);
-}
-
-main().catch(console.error);
+```ts
+const res = await client.p2p.createMarket({
+  question: "Will my team win the hackathon?",
+  initialAmount: uiToBaseUnits(50, 6),
+  side: "no",
+  endTime: new Date(Date.now() + 3 * 864e5),
+  oddsBps: 2500, // creator's NO side at 25% implied odds
+});
 ```
 
-**Key Points for P2P Markets:**
-- The creator takes a position on one side (YES or NO) with an initial amount
-- `creatorSideCap` defines the maximum amount the creator is willing to bet on their chosen side
-- Other users can take the opposite position
-- Use `client.createP2PMarketGeneral()` for P2P markets
+### P2P market with a custom oracle
 
-**Comparison: V2 AMM vs P2P Markets**
+`createMarketCustom` is identical to `createMarket` but you designate the **settler**. See
+[Custom Oracles](/sdk/custom-oracles) for the full lifecycle.
 
-| Feature | V2 AMM Market | P2P Market |
-|---------|---------------|---------------|
-| Market Type | Automated Market Maker | Peer-to-Peer |
-| Creator Position | No position (provides liquidity) | Takes YES or NO position |
-| Initial Liquidity | Split equally between YES/NO | Goes to creator's chosen side |
-| SDK Method | `client.market.createMarket()` | `client.createP2PMarketGeneral()` |
-| Side Selection | N/A | Required (yes/no) |
-| Creator Cap | N/A | Required (`creatorSideCap`) |
-| Use Case | Traditional prediction markets | Targeted position markets |
-
-## Creating a Twitter Market
-
-Twitter markets are linked to specific tweets. The SDK can automatically detect tweet IDs from URLs and fetch settlement criteria.
-
-### Creating a V2 Twitter Market
-
-This script demonstrates how to create a V2 AMM market linked to a Twitter post.
-
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from 'pnp-sdk';
-
-// Configuration
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
-
-async function main() {
-  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
-
-  // Market parameters
-  const question = 'Will this tweet cross 5000 replies?';
-  const tweetUrl = 'https://x.com/0xJeff/status/2003733328093151716';
-  const initialLiquidity = 1_000_000n; // 1 USDC (6 decimals)
-  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
-  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
-
-  // Create Twitter-linked V2 market
-  const result = await client.createMarketTwitter({
-    question,
-    tweetUrl,
-    initialLiquidity,
-    endTime,
-    collateralTokenMint: collateralMint,
-  });
-
-  console.log('Twitter V2 market created successfully!');
-  console.log('Signature:', result.signature);
-  console.log('Market Address:', result.market);
-}
-
-main().catch(console.error);
+```ts
+const res = await client.p2p.createMarketCustom({
+  question: "Will our internal KPI hit target this quarter?",
+  initialAmount: uiToBaseUnits(25, 6),
+  side: "yes",
+  endTime: new Date(Date.now() + 7 * 864e5),
+  oracle: mySettlerPubkey, // becomes an authorized settler for THIS market
+});
 ```
 
-### Creating a P2P Twitter Market
+<Warning>
+Whatever pubkey you pass as `oracle` can `settle()` and `setEndTime()` on this market. Prefer
+the plain `createMarket` (protocol oracle) unless you specifically want your own settler.
+</Warning>
 
-This script demonstrates how to create a P2P market linked to a Twitter post.
+### P2P parameters
 
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from 'pnp-sdk';
+<ParamField path="question" type="string" required>
+  Market question / title, stored on-chain.
+</ParamField>
+<ParamField path="initialAmount" type="BN | bigint | number" required>
+  Collateral the creator deposits to seed their side, in **base units**.
+</ParamField>
+<ParamField path="side" type='"yes" | "no"' required>
+  Which side the creator backs.
+</ParamField>
+<ParamField path="endTime" type="number | bigint | BN | Date" required>
+  Market end time. May be in the past for an immediately-settleable market.
+</ParamField>
+<ParamField path="oddsBps" type="number">
+  Creator-side odds in bps (100–9900). Omit for default 1:1 (10000). Creates the extension PDA.
+</ParamField>
+<ParamField path="creator" type="PublicKey">
+  Creator / fee recipient. Defaults to the signer; may differ from the payer.
+</ParamField>
+<ParamField path="collateralMint" type="PublicKey">
+  Override the collateral mint. Defaults to the network default.
+</ParamField>
+<ParamField path="oracle" type="PublicKey" required>
+  **`createMarketCustom` only.** The market's settler.
+</ParamField>
+<ParamField path="computeUnitLimit" type="number" default="400000">
+  CU limit prepended to the tx. Pass `0` to skip the compute-budget instruction.
+</ParamField>
 
-// Configuration
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
+## Pythagorean (AMM) markets
 
-async function main() {
-  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
+### General AMM market
 
-  // Market parameters
-  const question = 'Will this tweet cross 500 replies?';
-  const tweetUrl = 'https://twitter.com/cuomo/status/1234567890';
-  const side = 'yes'; // 'yes' or 'no'
-  const initialAmount = 1_000_000n; // 1 USDC (6 decimals)
-  const creatorSideCap = 5_000_000n; // 5 USDC max for creator's side
-  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
-  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
+The creator seeds liquidity; prices start at 50/50 and move as traders buy. Settlement uses the
+PnP protocol oracle.
 
-  // Create Twitter-linked P2P market
-  const result = await client.createP2PMarketTwitter({
-    question,
-    tweetUrl,
-    initialAmount,
-    side,
-    creatorSideCap,
-    endTime,
-    collateralTokenMint: collateralMint,
-  });
+```ts
+const res = await client.amm.createMarket({
+  question: "Will Solana flip Ethereum by TVL in 2026?",
+  initialLiquidity: uiToBaseUnits(200, 6), // seed 200 USDC of liquidity
+  endTime: new Date(Date.now() + 60 * 864e5),
+});
 
-  console.log('Twitter P2P market created successfully!');
-  console.log('Signature:', result.signature);
-  console.log('Market Address:', result.market);
-  console.log('Yes Token Mint:', result.yesTokenMint);
-  console.log('No Token Mint:', result.noTokenMint);
-}
-
-main().catch(console.error);
+console.log("market id:", res.marketId.toString(), res.market.toBase58());
 ```
 
-## Creating a YouTube Market
+### AMM market with custom odds / oracle
 
-YouTube markets are linked to specific videos. The SDK handles YouTube URL parsing and settlement integration.
-
-### Creating a V2 YouTube Market
-
-This script demonstrates how to create a V2 AMM market linked to a YouTube video.
-
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from 'pnp-sdk';
-
-// Configuration
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
-
-async function main() {
-  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
-
-  // Market parameters
-  const question = 'Will this video cross 1B views?';
-  const youtubeUrl = 'https://youtu.be/rNv8K8AYGi8';
-  const initialLiquidity = 1_000_000n; // 1 USDC (6 decimals)
-  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
-  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
-
-  // Create YouTube-linked V2 market
-  const result = await client.createMarketYoutube({
-    question,
-    youtubeUrl,
-    initialLiquidity,
-    endTime,
-    collateralTokenMint: collateralMint,
-  });
-
-  console.log('YouTube V2 market created successfully!');
-  console.log('Signature:', result.signature);
-  console.log('Market Address:', result.market);
-}
-
-main().catch(console.error);
+```ts
+const res = await client.amm.createMarketCustom({
+  question: "Will it rain in SF on launch day?",
+  initialLiquidity: uiToBaseUnits(100, 6),
+  endTime: new Date(Date.now() + 2 * 864e5),
+  oddsBps: 3000, // start YES at 30% (default 5000 = 50/50)
+  // oracle: mySettlerPubkey, // optional custom settler
+});
 ```
 
-### Creating a P2P YouTube Market
+### Coin market
 
-This script demonstrates how to create a P2P market linked to a YouTube video.
+Resolves on a token's price/metric. The type is encoded in the on-chain question as a suffix —
+`"<question>? <chain>:<coinAddress>"` — exactly like the PnP frontend, so the oracle recognizes
+it. `createCoinMarket` extends the AMM custom params, so `oddsBps` / `oracle` are also available.
 
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from 'pnp-sdk';
-
-// Configuration
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array goes here */];
-
-async function main() {
-  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
-
-  // Market parameters
-  const question = 'Will this video cross 40M views by the end of 2025?';
-  const youtubeUrl = 'https://youtube.com/watch?v=abcd1234';
-  const side = 'yes'; // 'yes' or 'no'
-  const initialAmount = 1_000_000n; // 1 USDC (6 decimals)
-  const creatorSideCap = 5_000_000n; // 5 USDC max for creator's side
-  const endTime = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
-  const collateralMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
-
-  // Create YouTube-linked P2P market
-  const result = await client.createP2PMarketYoutube({
-    question,
-    youtubeUrl,
-    initialAmount,
-    side,
-    creatorSideCap,
-    endTime,
-    collateralTokenMint: collateralMint,
-  });
-
-  console.log('YouTube P2P market created successfully!');
-  console.log('Signature:', result.signature);
-  console.log('Market Address:', result.market);
-  console.log('Yes Token Mint:', result.yesTokenMint);
-  console.log('No Token Mint:', result.noTokenMint);
-}
-
-main().catch(console.error);
+```ts
+const res = await client.amm.createCoinMarket({
+  question: "Will BONK 2x from here by end of month?",
+  coinAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", // BONK mint
+  chain: "solana", // default
+  initialLiquidity: uiToBaseUnits(150, 6),
+  endTime: new Date(Date.now() + 30 * 864e5),
+});
 ```
 
-## Creating a Market with Custom Oracle
+### YouTube market
 
-Custom Oracles allow you to bypass PNP's AI-powered global oracle and designate **your own wallet or service** to resolve markets. This is a powerful feature for builders who want full control over market resolution.
+Resolves on a video's stats. Encoded on-chain as `"<question>? <youtubeLink>"`.
 
-> **New in v0.2.6**: The `createMarketWithCustomOracle` function is now live on both **Devnet** and **Mainnet**!
-
-```typescript
-import { PublicKey } from '@solana/web3.js';
-import { PNPClient } from 'pnp-sdk';
-
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
-const WALLET_SECRET_ARRAY = [/* Your 64-byte private key array */];
-
-async function main() {
-  const client = new PNPClient(RPC_URL, Uint8Array.from(WALLET_SECRET_ARRAY));
-
-  // Your oracle address (can be your wallet or a dedicated oracle service)
-  const ORACLE_ADDRESS = client.signer!.publicKey;
-
-  const result = await client.createMarketWithCustomOracle({
-    question: 'Will our product launch by Q2 2026?',
-    initialLiquidity: 10_000_000n, // 10 USDC (6 decimals)
-    endTime: BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60),
-    collateralMint: new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
-    settlerAddress: ORACLE_ADDRESS,  // Your custom oracle!
-    yesOddsBps: 5000,  // Optional: 50/50 odds (range: 100-9900)
-  });
-
-  console.log('Market created:', result.market.toBase58());
-  console.log('TX:', result.signature);
-}
-
-main().catch(console.error);
+```ts
+const res = await client.amm.createYoutubeMarket({
+  question: "Will this video hit 1M views in 30 days?",
+  youtubeLink: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  initialLiquidity: uiToBaseUnits(100, 6),
+  endTime: new Date(Date.now() + 30 * 864e5),
+});
 ```
 
-For a deep dive into custom oracle lifecycle and advanced usage, see [Custom Oracles](/sdk/custom-oracles).
+### AMM parameters
+
+<ParamField path="question" type="string" required>
+  Market question / title, stored on-chain.
+</ParamField>
+<ParamField path="initialLiquidity" type="BN | bigint | number" required>
+  Liquidity the creator seeds the AMM with, in **base units**.
+</ParamField>
+<ParamField path="endTime" type="number | bigint | BN | Date" required>
+  Market end time.
+</ParamField>
+<ParamField path="oddsBps" type="number" default="5000">
+  **Custom/coin/youtube paths.** YES-side odds in bps (100–9900). Default 5000 (50/50).
+</ParamField>
+<ParamField path="oracle" type="PublicKey">
+  **Custom/coin/youtube paths.** Optional custom settler.
+</ParamField>
+<ParamField path="coinAddress" type="string" required>
+  **`createCoinMarket` only.** The coin's contract address (SPL mint on Solana).
+</ParamField>
+<ParamField path="chain" type="string" default="solana">
+  **`createCoinMarket` only.** Chain prefix stored in the question.
+</ParamField>
+<ParamField path="youtubeLink" type="string" required>
+  **`createYoutubeMarket` only.** Full YouTube video link.
+</ParamField>
+
+## What you get back
+
+Both models return a result with the transaction signature and the created addresses:
+
+<CodeGroup>
+
+```ts P2P — CreateMarketResult
+{
+  signature: string;
+  marketId: bigint;     // == global_config.global_id at creation
+  market: PublicKey;    // MarketV3 PDA
+  yesMint: PublicKey;   // YES decision-token mint
+  noMint: PublicKey;    // NO decision-token mint
+  extension?: PublicKey; // present only with custom odds/oracle
+}
+```
+
+```ts AMM — AmmCreateMarketResult
+{
+  signature: string;
+  marketId: bigint;
+  market: PublicKey;    // MarketV2 PDA
+  extension?: PublicKey; // present only with custom odds/oracle
+}
+```
+
+</CodeGroup>
+
+<Note>
+**Other resolution kinds** (Twitter, DefiLlama, Kalshi) are supported at the protocol level but
+have no dedicated SDK helper yet. You can still create them as general markets and attach
+[settlement criteria](/sdk/custom-oracles#settlement-criteria) describing how they resolve.
+</Note>
+
+## Runnable examples
+
+The SDK repo ships a script for every market type in
+[`examples/create-markets/`](https://github.com/proxima424/pnp-sdk-v2/tree/main/examples/create-markets)
+— clone it, set `PNP_KEYPAIR`, and run any of them with `tsx`.

@@ -52,11 +52,10 @@
             "pages": [
               "sdk/overview",
               "sdk/create-market",
-              "sdk/custom-oracles",
               "sdk/trading",
+              "sdk/custom-oracles",
               "sdk/refunds",
               "sdk/api-reference",
-              "sdk/cli",
               "sdk/guides"
             ]
           },

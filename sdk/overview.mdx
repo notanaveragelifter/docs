@@ -1,114 +1,172 @@
 ---
 title: "SDK Overview"
-description: "Install and initialize the PNP SDK, a TypeScript library for creating and trading Solana prediction markets programmatically."
+description: "pnp-core is a lean, type-safe TypeScript SDK for the PnP prediction-market protocol on Solana. Install it, construct a client, and create or trade markets in a few lines."
 ---
 
-# PnP SDK Documentation
+`pnp-core` is the official TypeScript SDK for the [PnP protocol](https://www.pnp.exchange/) on
+Solana. It wraps the on-chain program in one clean, type-safe client so you can create markets,
+take positions, settle, and redeem without hand-rolling instructions or account resolution.
 
-## Table of Contents
+<CardGroup cols={2}>
+  <Card title="Create markets" icon="plus">
+    Parimutuel (P2P) and Pythagorean (AMM) markets — general, coin, or YouTube.
+  </Card>
+  <Card title="Trade & redeem" icon="arrow-right-arrow-left">
+    Buy into a side, read live odds, and redeem winning positions.
+  </Card>
+  <Card title="Type-safe" icon="shield-check">
+    One `@coral-xyz/anchor` Program is the source of truth for every account and discriminator.
+  </Card>
+  <Card title="Node & browser" icon="browsers">
+    Works with a Node `Keypair` or any browser wallet adapter. Ships ESM + CJS + `.d.ts`.
+  </Card>
+</CardGroup>
 
-- [Overview](#overview)
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
+## How it fits together
 
-**Guides:**
-- [Create a Market](/sdk/create-market)
-- [Custom Oracles](/sdk/custom-oracles)
-- [Trading & Redemption](/sdk/trading)
-- [Refunds](/sdk/refunds)
-- [API Reference](/sdk/api-reference)
-- [CLI Usage](/sdk/cli)
-- [Examples & Best Practices](/sdk/guides)
+Everything hangs off a single **`PnpClient`**, which exposes three namespaces:
 
-## Overview
+| Namespace | What it does | Model |
+|-----------|--------------|-------|
+| `client.p2p` | Parimutuel markets — create, buy, settle, redeem, refund, criteria | V3 |
+| `client.amm` | Pythagorean markets — create + read prices/multipliers | V2 |
+| `client.oracle` | Read the AI oracle's resolvable-status and settlement criteria | — |
 
-The PnP SDK is a TypeScript library for interacting with Solana-based prediction markets. It provides a clean, type-safe interface for creating markets, trading positions, and managing market operations on the Solana blockchain.
+PnP markets vary along **two independent axes** — pick one from each:
 
-### Features
+| Axis | Options |
+|------|---------|
+| **Liquidity model** | `p2p` (parimutuel / creator seeds a side) · `amm` (Pythagorean / seeded liquidity) |
+| **Resolution kind** | general question · coin/token price · YouTube stats |
 
-- Create and manage prediction markets on Solana
-- Trade YES/NO tokens
-- Redeem positions for resolved markets
-- Claim creator refunds for unresolved markets
-- Interact with on-chain market data
-- **Fetch real-time market prices & multipliers** (no wallet required)
-- Fetch settlement criteria from proxy server
-- TypeScript-first development experience
-- Comprehensive error handling
-- Built on top of `@solana/web3.js` and supports both SPL Token and Token-2022 programs
+<Note>
+`pnp-core` is a from-scratch rewrite of the older `pnp-sdk`. The client is now `PnpClient`
+(constructed from an options object) and methods are grouped under `p2p` / `amm` / `oracle`
+instead of living flat on the client.
+</Note>
 
-### Prerequisites
+## Installation
 
-- Node.js 16+
-- npm or yarn
-- Solana CLI (for local development)
-- Basic understanding of Solana and blockchain concepts
+<CodeGroup>
 
-### Installation
-
-```bash
-npm install pnp-sdk
-# or
-yarn add pnp-sdk
+```bash npm
+npm install pnp-core @solana/web3.js @coral-xyz/anchor
 ```
 
-### Quick Start
+```bash pnpm
+pnpm add pnp-core @solana/web3.js @coral-xyz/anchor
+```
 
-1. Install the package:
-   ```bash
-   npm install pnp-sdk
-   ```
+```bash yarn
+yarn add pnp-core @solana/web3.js @coral-xyz/anchor
+```
 
-2. Import the SDK - Two methods are supported:
+```bash bun
+bun add pnp-core @solana/web3.js @coral-xyz/anchor
+```
 
-   **Method 1: ESM Direct Import (Recommended)**
-   ```typescript
-   // For TypeScript/ES modules
-   import { PNPClient } from 'pnp-sdk';
-   ```
+</CodeGroup>
 
-   **Method 2: CommonJS Require (For compatibility)**
-   ```typescript
-   // For CommonJS environments or when using the built package
-   import { createRequire } from 'module';
-   const require = createRequire(import.meta.url);
-   const { PNPClient } = require('pnp-sdk');
-   // Or when developing locally
-   const { PNPClient } = require('../dist/index.cjs');
-   ```
+<Info>
+`@solana/web3.js` and `@coral-xyz/anchor` are peer dependencies — install them alongside
+`pnp-core`. Node 18+ is required.
+</Info>
 
-3. Initialize the client:
-   ```typescript
-   import { PNPClient } from 'pnp-sdk';
-   import { PublicKey } from '@solana/web3.js';
+## Construct a client
 
-   // Initialize with RPC URL and private key (if write operations are needed)
-   const rpcUrl = 'https://api.mainnet-beta.solana.com';
+Use the `mainnet()` / `devnet()` presets, or the full constructor for custom RPC and commitment.
 
-   // For read-only operations
-   const readOnlyClient = new PNPClient(rpcUrl);
+<Tabs>
+  <Tab title="Node (Keypair)">
+    ```ts
+    import { PnpClient } from "pnp-core";
+    import { Keypair } from "@solana/web3.js";
+    import { readFileSync } from "node:fs";
 
-   // For write operations (with private key)
-   const privateKey = [...]; // Uint8Array of your private key or base58 encoded string
-   const client = new PNPClient(rpcUrl, privateKey);
-   ```
+    const wallet = Keypair.fromSecretKey(
+      Uint8Array.from(JSON.parse(readFileSync("/path/to/id.json", "utf8"))),
+    );
 
-3. Example operation - fetching market info:
-   ```typescript
-   async function getMarketInfo(marketAddress: string) {
-     try {
-       const market = new PublicKey(marketAddress);
-       const { account } = await client.fetchMarket(market);
+    // Preset (uses the network default RPC)
+    const client = PnpClient.mainnet({ wallet });
 
-       console.log('Market Question:', account.question);
-       console.log('Market Creator:', new PublicKey(account.creator).toBase58());
-       console.log('Market Resolved:', account.resolved);
+    // …or the full constructor
+    // const client = new PnpClient({
+    //   cluster: "mainnet",
+    //   wallet,
+    //   rpcUrl: "https://your-rpc.example.com",
+    //   commitment: "confirmed",
+    // });
+    ```
+  </Tab>
+  <Tab title="Browser (wallet adapter)">
+    ```ts
+    import { PnpClient } from "pnp-core";
+    import { useWallet } from "@solana/wallet-adapter-react";
 
-       return account;
-     } catch (error) {
-       console.error('Error fetching market:', error);
-       throw error;
-     }
-   }
-   ```
+    // `wallet` is any adapter exposing publicKey + signTransaction(s).
+    const { wallet } = useWallet();
+
+    const client = PnpClient.devnet({
+      wallet,
+      rpcUrl: "https://your-rpc.example.com",
+    });
+    ```
+  </Tab>
+  <Tab title="Read-only (no signer)">
+    ```ts
+    import { PnpClient } from "pnp-core";
+
+    // Omit `wallet` for reads/derivations only. Write methods throw.
+    const client = PnpClient.mainnet();
+
+    const market = await client.p2p.getMarket(42n);
+    console.log(market.impliedYesProbability);
+    ```
+  </Tab>
+</Tabs>
+
+## Your first calls
+
+Reads need no wallet; writes need a signer.
+
+```ts
+import { PnpClient, uiToBaseUnits } from "pnp-core";
+
+const client = PnpClient.mainnet({ wallet });
+
+// READ — decode a market by numeric id or PDA
+const market = await client.p2p.getMarket(42n);
+console.log(market.question, market.impliedYesProbability);
+
+// WRITE — create a parimutuel market seeded with 100 USDC on YES
+const res = await client.p2p.createMarket({
+  question: "Will BTC close above $100k on Dec 31, 2026?",
+  initialAmount: uiToBaseUnits(100, 6), // amounts are in BASE units
+  side: "yes",
+  endTime: new Date(Date.now() + 30 * 864e5),
+});
+console.log("market id:", res.marketId.toString());
+```
+
+<Warning>
+**Amounts are always in base units, not UI units.** For 6-decimal USDC, 100 USDC is
+`100_000000n`. Use `uiToBaseUnits(100, 6)` / `baseUnitsToUi(amount, 6)` to convert.
+</Warning>
+
+## Where to next
+
+<CardGroup cols={2}>
+  <Card title="Create a Market" icon="plus" href="/sdk/create-market">
+    Every create path: P2P, AMM, coin, and YouTube markets.
+  </Card>
+  <Card title="Trading & Redemption" icon="arrow-right-arrow-left" href="/sdk/trading">
+    Buy into a side, read odds, and redeem winnings.
+  </Card>
+  <Card title="Custom Oracles" icon="gavel" href="/sdk/custom-oracles">
+    Designate your own settler and attach settlement criteria.
+  </Card>
+  <Card title="API Reference" icon="book" href="/sdk/api-reference">
+    Every export, method, and type.
+  </Card>
+</CardGroup>

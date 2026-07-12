@@ -1,463 +1,208 @@
 ---
 title: "API Reference"
-description: "Complete TypeScript API reference for PNPClient -- constructors, modules, methods, read-only helpers, proxy server integration, and type definitions."
+description: "Complete reference for pnp-core — the PnpClient, the p2p / amm / oracle namespaces, helper functions, constants, and exported types."
 ---
 
-# API Reference
+Import everything from the package root:
 
-## Core Client
+```ts
+import { PnpClient, uiToBaseUnits, pda /* … */ } from "pnp-core";
+```
 
-### `PNPClient`
-Main client class for interacting with the PNP protocol. This is the primary entry point for all SDK operations.
+<Info>
+On-chain read/write methods accept a market as a numeric **id** (`bigint | number`) **or** its
+**`PublicKey`** PDA. Oracle (indexer) methods accept a `PublicKey | string`. **Amounts are in
+base units** — use `uiToBaseUnits` / `baseUnitsToUi`.
+</Info>
 
-```typescript
-class PNPClient {
-  readonly client: Client;            // Low-level client for direct program interactions
-  readonly signer?: SignerLike;       // Optional signer for write operations
-  readonly market?: MarketModule;     // Market creation operations
-  readonly trading?: TradingModule;   // Trading operations
-  readonly redemption?: RedemptionModule; // Redemption operations
-  readonly anchorMarket?: AnchorMarketModule; // Anchor-based market operations
-  readonly anchorClient?: AnchorClient; // Anchor-based client
+## PnpClient
 
-  /**
-   * Creates a new PNP client instance
-   * @param rpcUrl - The URL of the Solana RPC endpoint
-   * @param privateKey - Optional private key (required for write operations)
-   */
-  constructor(rpcUrl: string, privateKey?: Uint8Array | string | { secretKey: Uint8Array });
+| Member | Signature | Notes |
+|--------|-----------|-------|
+| constructor | `new PnpClient(opts: PnpClientOptions)` | `cluster` required; omit `wallet` → read-only |
+| `PnpClient.mainnet` | `(opts?) => PnpClient` | mainnet preset |
+| `PnpClient.devnet` | `(opts?) => PnpClient` | devnet preset |
+| `.p2p` | `P2PModule` | parimutuel / V3 API |
+| `.amm` | `AmmModule` | Pythagorean / V2 API |
+| `.oracle` | `OracleModule` | indexer / oracle reads |
+| `.canSign` | `boolean` | true if a signer is attached |
+| `.payer` | `PublicKey` | signer pubkey; throws if read-only |
+| `.requireWallet()` | `() => AnchorWallet` | returns the signer or throws |
+| `.signMessage(msg)` | `(Uint8Array) => Promise<Uint8Array>` | ed25519 sign for off-chain auth |
+
+Also exposed as properties: `network`, `connection`, `programId`, `program` (the underlying
+anchor `Program`), `provider`, `commitment`, `wallet?`, `criteriaApiUrl`, `oracleApiUrl`.
+
+<ParamField path="cluster" type='"mainnet" | "devnet"' required>
+  Target network. Set automatically by the `.mainnet()` / `.devnet()` presets.
+</ParamField>
+<ParamField path="wallet" type="Keypair | AnchorWallet">
+  A Node `Keypair` or browser wallet adapter. Omit for a read-only client.
+</ParamField>
+<ParamField path="rpcUrl" type="string">
+  Override the network default RPC endpoint.
+</ParamField>
+<ParamField path="connection" type="Connection">
+  Provide a preconfigured `@solana/web3.js` connection instead of `rpcUrl`.
+</ParamField>
+<ParamField path="commitment" type="Commitment" default="confirmed">
+  Transaction commitment level.
+</ParamField>
+<ParamField path="criteriaApiUrl" type="string">
+  Override the settlement-criteria server base URL.
+</ParamField>
+<ParamField path="oracleApiUrl" type="string">
+  Override the indexer API base URL (include the `/api` prefix).
+</ParamField>
+
+## client.p2p — parimutuel (V3)
+
+| Method | Signature |
+|--------|-----------|
+| `createMarket` | `(params: CreateMarketParams) => Promise<CreateMarketResult>` |
+| `createMarketCustom` | `(params: CreateMarketCustomParams) => Promise<CreateMarketResult>` |
+| `buy` | `(params: BuyParams) => Promise<BuyResult>` |
+| `creatorWithdraw` | `(params: CreatorWithdrawParams) => Promise<CreatorWithdrawResult>` |
+| `redeem` | `(params: RedeemParams) => Promise<RedeemResult>` |
+| `settle` | `(params: SettleParams) => Promise<SettleResult>` |
+| `setEndTime` | `(params: SetEndTimeParams) => Promise<SetEndTimeResult>` |
+| `updateCreator` | `(params: UpdateCreatorParams) => Promise<UpdateCreatorResult>` |
+| `setSettlementCriteria` | `(params: SetSettlementCriteriaParams) => Promise<SetSettlementCriteriaResult>` |
+| `getSettlementCriteria` | `(market, opts?) => Promise<SettlementCriteriaRecord \| null>` |
+| `getMarket` | `(market) => Promise<P2PMarket>` |
+| `fetchGlobalConfig` | `() => Promise<GlobalConfigAccount>` |
+| `nextMarketId` | `() => Promise<bigint>` |
+
+## client.amm — Pythagorean (V2)
+
+| Method | Signature |
+|--------|-----------|
+| `createMarket` | `(params: AmmCreateMarketParams) => Promise<AmmCreateMarketResult>` |
+| `createMarketCustom` | `(params: AmmCreateMarketCustomParams) => Promise<AmmCreateMarketResult>` |
+| `createCoinMarket` | `(params: CreateCoinMarketParams) => Promise<AmmCreateMarketResult>` |
+| `createYoutubeMarket` | `(params: CreateYoutubeMarketParams) => Promise<AmmCreateMarketResult>` |
+| `getMarket` | `(market) => Promise<AmmMarket>` |
+| `readPrice` | `(market) => Promise<AmmPrice>` — `{ yesPrice, noPrice }` |
+| `readMultiplier` | `(market) => Promise<AmmMultiplier>` — `{ yesMultiplier, noMultiplier }` |
+| `fetchGlobalConfig` | `() => Promise<GlobalConfigAccount>` |
+| `nextMarketId` | `() => Promise<bigint>` |
+
+## client.oracle — indexer reads
+
+| Method | Signature |
+|--------|-----------|
+| `getResolvableStatus` | `(market: PublicKey \| string, opts?) => Promise<ResolvableStatus>` |
+| `getSettlementCriteria` | `(market: PublicKey \| string, opts?) => Promise<OracleSettlementCriteria \| null>` |
+| `waitForResolvable` | `(market: PublicKey \| string, opts?) => Promise<WaitForResolvableResult>` |
+
+`ResolvableStatus` = `"checking" | "resolvable" | "unresolvable"`.
+`waitForResolvable` options: `{ apiUrl?, intervalMs? (3000), timeoutMs? (120000) }`.
+
+## Helper functions
+
+<AccordionGroup>
+  <Accordion title="Numeric & units">
+    - `toBN(value) => BN`
+    - `toBig(value) => bigint`
+    - `u64le(value) => Buffer` — 8-byte little-endian
+    - `uiToBaseUnits(amount, decimals) => bigint` — `uiToBaseUnits(100, 6) === 100_000000n`
+    - `baseUnitsToUi(amount, decimals) => number`
+  </Accordion>
+  <Accordion title="Token & ATA">
+    - `getTokenProgramForMint(connection, mint) => Promise<PublicKey>` — classic vs Token-2022
+    - `ata(mint, owner, tokenProgram?) => PublicKey` — associated token address
+    - Constants: `TOKEN_PROGRAM_ID`, `TOKEN_2022_PROGRAM_ID`, `ASSOCIATED_TOKEN_PROGRAM_ID`
+  </Accordion>
+  <Accordion title="PDAs (pda.* namespace)">
+    Each is `(programId, id) => PublicKey` unless noted:
+    - `pda.globalConfigPda(programId)`
+    - `pda.marketV2Pda`, `pda.marketV2ExtensionPda`
+    - `pda.marketV3Pda`, `pda.yesMintV3Pda`, `pda.noMintV3Pda`, `pda.marketV3ExtensionPda`, `pda.marketV3GatePda`
+    - `pda.creatorFeeTreasuryPda(...)`, `pda.reserveVault(...)`
+  </Accordion>
+  <Accordion title="Settlement-criteria signing">
+    - `buildSettlementCriteriaMessage(params) => string`
+    - `sha256Hex(input) => string`
+    - `randomNonce() => string`
+  </Accordion>
+  <Accordion title="Networks & IDL">
+    - `resolveNetwork(cluster) => NetworkConfig`
+    - `NETWORKS` — `{ mainnet, devnet }`
+    - `getIdl(cluster) => Idl`, `PNP_IDL_MAINNET`, `PNP_IDL_DEVNET`, `IDL_PROGRAM_ADDRESS`
+  </Accordion>
+</AccordionGroup>
+
+## Constants
+
+| Constant | Value / meaning |
+|----------|-----------------|
+| `PNP_PROGRAM_ID` | `8PyE2dizL52ga7ytqLtqRyjwWp4yXEx8M5Z4BAHgHuTb` (same on both clusters) |
+| `REDEEM_FEE_BPS` | `200` — 2% redemption fee on gross payout |
+| `REDEEM_FEE_CREATOR_SHARE_PCT` / `REDEEM_FEE_ADMIN_SHARE_PCT` | `60` / `40` — fee split |
+| `MIN_ODDS_BPS` / `MAX_ODDS_BPS` / `DEFAULT_ODDS_BPS` | `100` / `9900` / `10000` |
+| `NEW_RULES_FROM_MARKET_ID` | `79n` — locked-liquidity threshold |
+| `MAX_OPPOSITE_MULTIPLE` | `100n` — opposite-side pot cap (new-rules) |
+| `MAX_GATE_ENTRIES` | `50` — whitelist gate capacity |
+| `P2P_ADMIN_KEY` | Hardcoded P2P admin (settler + fee recipient) |
+| `DEFAULT_CRITERIA_API_URL` / `DEFAULT_ORACLE_API_URL` | Criteria server / indexer defaults |
+| `SEEDS` | PDA seed prefixes |
+
+## Key types
+
+### P2PMarket
+
+Decoded + computed snapshot returned by `p2p.getMarket`. Token amounts are `bigint` base units.
+
+```ts
+interface P2PMarket {
+  address: PublicKey;
+  id: bigint;
+  question: string;
+  status: "open" | "ended" | "resolved";
+  creator: PublicKey;
+  creatorSide: "yes" | "no";
+  creatorInitialAmount: bigint;
+  resolved: boolean;
+  resolvable: boolean;
+  winner: "yes" | "no" | null;
+  endTime: number;          // unix seconds
+  creationTime: number;
+  yesPot: bigint; noPot: bigint; totalPot: bigint;
+  yesTokensIssued: bigint; noTokensIssued: bigint;
+  impliedYesProbability: number; // 0..1
+  impliedNoProbability: number;  // 0..1
+  collateralMint: PublicKey; yesMint: PublicKey; noMint: PublicKey;
+  creatorFeeTreasury: PublicKey;
+  hasExtension: boolean; oddsBps: number; oracle: PublicKey | null;
 }
 ```
 
-**Constructor Parameters:**
-- `rpcUrl`: The URL of the Solana RPC endpoint (e.g., 'https://api.mainnet-beta.solana.com')
-- `privateKey`: (Optional) Private key for signing transactions, provided as:
-  - Base58-encoded string
-  - Uint8Array containing raw bytes
-  - Object with secretKey property containing Uint8Array
+### AmmMarket
 
-**Example:**
-```typescript
-// Read-only client (can only fetch data)
-const readOnlyClient = new PNPClient('https://api.mainnet-beta.solana.com');
-
-// Full client with signing capabilities
-const fullClient = new PNPClient(
-  'https://api.mainnet-beta.solana.com',
-  'base58EncodedPrivateKey...'
-);
-```
-
-**Usage Notes:**
-- Without a private key, only read-only methods will be available
-- With a valid private key, all modules (market, trading, redemption) are initialized
-- The client automatically detects and supports both SPL Token and Token-2022 programs
-
-## SDK Module Structure
-
-The PNP SDK is organized into modules for different functionality areas:
-
-1. **Core Client Methods** - Available directly on the `PNPClient` instance:
-   - `redeemPosition` - Redeem winning positions after market resolution
-   - `claimMarketRefund` - Claim refund for unresolvable markets
-   - `fetchMarket`, `fetchMarkets`, `fetchGlobalConfig` - Read-only data methods
-   - `getMarketPriceV2` - Get real-time prices & multipliers for V2 AMM markets
-   - `fetchSettlementCriteria`, `getSettlementCriteria` - Proxy server integration
-   - `fetchSettlementData`, `getSettlementData` - Get market settlement details
-   - `fetchMarketAddresses` - Get all market addresses from proxy
-
-2. **Market Module** - Available via `client.market` (requires signer):
-   - `createMarket` - Create new prediction markets
-
-3. **Trading Module** - Available via `client.trading` (requires signer):
-   - `buyOutcome` - Buy YES/NO tokens with collateral
-   - `sellOutcome` - Sell YES/NO tokens for collateral
-   - `getMarketInfo` - Get detailed market information
-
-4. **Redemption Module** - Available via `client.redemption` (requires signer):
-   - `redeemPositionV2` - Low-level position redemption (used by core `redeemPosition`)
-   - `creatorRefund`, `creatorRefundV2` - Low-level refund methods
-
-5. **Anchor-based Modules** - Available via `client.anchorMarket` and `client.anchorClient` (optional):
-   - Provides Anchor program interfaces for advanced use cases
-
-**Example of module usage:**
-```typescript
-// Core client method (available without signer)
-const marketData = await client.fetchMarket(marketPublicKey);
-
-// Module method (requires signer)
-const buyResult = await client.trading.buyOutcome({
-  market: marketPublicKey,
-  outcome: 'YES',
-  amountUsdc: 5_000_000, // 5 USDC
-});
-```
-
-## Main SDK Methods
-
-### `redeemPosition(market: PublicKey, options?: RedeemPositionOptions): Promise<{ signature: string }>`
-
-Redeems a winning position in a resolved market. This is used to claim your winnings after a market has been resolved.
-
-**Parameters:**
-- `market`: PublicKey - The market where the position was created
-- `options`: (Optional) Configuration object
-  - `admin`: PublicKey - Override the admin account from global config
-  - `marketCreator`: PublicKey - Override the market creator from market account
-  - `creatorFeeTreasury`: PublicKey - Override the creator fee treasury account
-
-**Returns:** Promise that resolves to an object containing the transaction signature
-
-**Example:**
-```typescript
-const marketAddress = '7pDJi7pVZMSCZY97QLcCLc7AQrJW9g2GVBcoiPE8PtuZ';
-const market = new PublicKey(marketAddress);
-
-try {
-  // First check market status to verify it's resolved
-  const { account: marketAccount } = await client.fetchMarket(market);
-
-  if (!marketAccount.resolved) {
-    throw new Error('Market is not yet resolved. Cannot redeem position.');
-  }
-
-  console.log('Market status:', {
-    resolved: marketAccount.resolved,
-    winningToken: marketAccount.winning_token_id
-  });
-
-  // Redeem the winning position
-  const result = await client.redeemPosition(market);
-  console.log('Position redeemed successfully! Signature:', result.signature);
-} catch (error) {
-  console.error('Error redeeming position:', error);
+```ts
+interface AmmMarket {
+  address: PublicKey; id: bigint; version: number;
+  question: string; status: "open" | "ended" | "resolved";
+  creator: PublicKey; resolved: boolean; resolvable: boolean;
+  winner: "yes" | "no" | null;
+  endTime: number; creationTime: number;
+  collateralMint: PublicKey;
+  yesMint: PublicKey | null; noMint: PublicKey | null; // null until first buy
+  marketReserves: bigint; yesSupply: bigint; noSupply: bigint; initialLiquidity: bigint;
+  creatorFeeTreasury: PublicKey;
+  yesPrice: number; noPrice: number; yesMultiplier: number; noMultiplier: number;
 }
 ```
 
-### `claimMarketRefund(market: PublicKey): Promise<{ signature: string }>`
+### Shared enums
 
-Claims a refund for a market creator if the market is not resolvable. This method allows creators to retrieve their initial liquidity if the market cannot be resolved.
-
-**Parameters:**
-- `market`: PublicKey - The market to claim the refund for
-
-**Returns:** Promise that resolves to an object containing the transaction signature
-
-**Eligibility:**
-- Market must not be resolvable (checked via on-chain flag or proxy server)
-- The caller (signer) must be the market creator
-
-**Example:**
-```typescript
-const marketAddress = 'BgXHNrCuAhi3Dv5KpSybTzDbRgVBeEKEwDAwGhQSEpAL';
-const market = new PublicKey(marketAddress);
-
-try {
-  const result = await client.claimMarketRefund(market);
-  console.log('Creator refund claimed successfully! Signature:', result.signature);
-} catch (error) {
-  console.error('Error claiming creator refund:', error);
-}
+```ts
+type Side = "yes" | "no";
+type Amount = BN | bigint | number;      // base units
+type TimeInput = number | bigint | BN | Date;
+type Cluster = "mainnet" | "devnet";
 ```
 
-## Read-Only Helpers
-
-These methods are available even without providing a private key to the client constructor.
-
-### `fetchMarket(market: PublicKey): Promise<{ publicKey: PublicKey; account: MarketType }>`
-
-Fetches detailed information about a specific market.
-
-**Parameters:**
-- `market`: PublicKey - The market to fetch information for
-
-**Returns:** Promise that resolves to an object containing:
-- `publicKey`: PublicKey - The market's public key
-- `account`: MarketType - The market account data
-
-**Example:**
-```typescript
-const marketAddress = '3p7ZUwvn9S2FtRxGMSPsvRe17bf4JzSc6ex21kqhxdmd';
-const market = new PublicKey(marketAddress);
-
-try {
-  const { publicKey, account } = await client.fetchMarket(market);
-  console.log('Market Question:', account.question);
-  console.log('Creator:', new PublicKey(account.creator).toBase58());
-  console.log('Resolved:', account.resolved);
-  console.log('Winning Token:', account.winning_token_id || 'Not yet resolved');
-} catch (error) {
-  console.error('Error fetching market:', error);
-}
-```
-
-### `fetchMarkets(): Promise<MarketsResponse>`
-
-Fetches all available markets.
-
-**Returns:** Promise that resolves to an object containing:
-- `count`: number - The number of markets found
-- `data`: Array of market objects with:
-  - `publicKey`: string - The market's public key as a base58 string
-  - `account`: MarketType - The market account data
-
-**Example:**
-```typescript
-try {
-  const { count, data } = await client.fetchMarkets();
-  console.log(`Found ${count} markets`);
-
-  // Display basic info for each market
-  data.forEach(({ publicKey, account }) => {
-    console.log('--------------------------');
-    console.log('Market:', publicKey);
-    console.log('Question:', account.question);
-    console.log('Resolved:', account.resolved);
-    console.log('End Time:', new Date(Number(account.end_time) * 1000).toISOString());
-  });
-} catch (error) {
-  console.error('Error fetching markets:', error);
-}
-```
-
-### `fetchGlobalConfig(): Promise<{ publicKey: PublicKey; account: GlobalConfigType }>`
-
-Fetches the global configuration account for the PNP program.
-
-**Returns:** Promise that resolves to an object containing:
-- `publicKey`: PublicKey - The global config account's public key
-- `account`: GlobalConfigType - The global config account data
-
-**Example:**
-```typescript
-try {
-  const { publicKey, account } = await client.fetchGlobalConfig();
-  console.log('Global Config Address:', publicKey.toBase58());
-  console.log('Admin Address:', new PublicKey(account.admin).toBase58());
-  // Access other global config fields as needed
-} catch (error) {
-  console.error('Error fetching global config:', error);
-}
-```
-
-### `getMarketPriceV2(market: string | PublicKey): Promise<MarketPriceV2Data>`
-
-Fetches real-time price and multiplier data for a V2 AMM market. This is a read-only operation that doesn't require a wallet or private key.
-
-**Parameters:**
-- `market`: string | PublicKey - The V2 market address (as string or PublicKey)
-
-**Returns:** Promise that resolves to a `MarketPriceV2Data` object containing:
-- `yesPrice`: number - Current YES token price (0-1 range)
-- `noPrice`: number - Current NO token price (0-1 range)
-- `yesMultiplier`: number - Potential return multiplier if YES wins
-- `noMultiplier`: number - Potential return multiplier if NO wins
-- `marketReserves`: number - Total collateral in human-readable units
-- `yesTokenSupply`: number - YES token supply in human-readable units
-- `noTokenSupply`: number - NO token supply in human-readable units
-- `marketReservesRaw`: string - Total collateral in raw base units
-- `yesTokenSupplyRaw`: string - YES token supply in raw base units
-- `noTokenSupplyRaw`: string - NO token supply in raw base units
-
-**Example:**
-```typescript
-const client = new PNPClient('https://api.mainnet-beta.solana.com');
-const marketAddress = '7AENtBCWx8...';
-
-try {
-  const priceData = await client.getMarketPriceV2(marketAddress);
-
-  console.log('Market Prices:');
-  console.log(`  YES: $${priceData.yesPrice.toFixed(4)} (${priceData.yesMultiplier.toFixed(2)}x)`);
-  console.log(`  NO:  $${priceData.noPrice.toFixed(4)} (${priceData.noMultiplier.toFixed(2)}x)`);
-  console.log(`  Total Reserves: ${priceData.marketReserves}`);
-} catch (error) {
-  console.error('Error fetching market price:', error);
-}
-```
-
-## Proxy Server Integration
-
-The SDK provides methods to interact with the PNP proxy server for fetching market data and settlement information.
-
-### `fetchSettlementCriteria(market: string | PublicKey, baseUrl?: string): Promise<SettlementCriteria>`
-
-Fetches settlement criteria for a market from the proxy server.
-
-**Parameters:**
-- `market`: string | PublicKey - Market address (as string or PublicKey)
-- `baseUrl`: string (Optional) - Base URL for the proxy server. Defaults to environment variable or hardcoded value.
-
-**Returns:** Promise that resolves to a SettlementCriteria object
-
-**Example:**
-```typescript
-const marketAddress = '5ehmgehNxViAhUF9mfTeMHN1JLDqQtipwKup18AuZH7Q';
-
-try {
-  const criteria = await client.fetchSettlementCriteria(marketAddress);
-  console.log('Settlement Criteria:');
-  console.log(JSON.stringify(criteria, null, 2));
-} catch (error) {
-  console.error('Error fetching settlement criteria:', error);
-}
-```
-
-### `getSettlementCriteria(market: string | PublicKey, baseUrl?: string, options?: { retryDelayMs?: number; maxRetryTimeMs?: number }): Promise<SettlementCriteria>`
-
-Gets settlement criteria with automatic retry logic. This is useful for waiting for criteria to become available.
-
-**Parameters:**
-- `market`: string | PublicKey - Market address (as string or PublicKey)
-- `baseUrl`: string (Optional) - Base URL for the proxy server
-- `options`: (Optional) Retry configuration
-  - `retryDelayMs`: number - Milliseconds to wait between retries (default: 2000)
-  - `maxRetryTimeMs`: number - Maximum time to retry in milliseconds (default: 15 minutes)
-
-**Returns:** Promise that resolves to a SettlementCriteria object
-
-**Example:**
-```typescript
-const marketAddress = '5ehmgehNxViAhUF9mfTeMHN1JLDqQtipwKup18AuZH7Q';
-
-try {
-  console.log('Waiting for settlement criteria (timeout: 15 minutes)');
-  const criteria = await client.getSettlementCriteria(marketAddress);
-  console.log('Settlement Criteria:');
-  console.log(JSON.stringify(criteria, null, 2));
-} catch (error) {
-  console.error('Error getting settlement criteria:', error);
-}
-```
-
-### `fetchSettlementData(market: string | PublicKey, baseUrl?: string): Promise<SettlementData>`
-
-Fetches settlement data for a market from the proxy server.
-
-**Parameters:**
-- `market`: string | PublicKey - Market address (as string or PublicKey)
-- `baseUrl`: string (Optional) - Base URL for the proxy server
-
-**Returns:** Promise that resolves to a SettlementData object with answer and reasoning
-
-**Example:**
-```typescript
-const marketAddress = '5ehmgehNxViAhUF9mfTeMHN1JLDqQtipwKup18AuZH7Q';
-
-try {
-  const data = await client.fetchSettlementData(marketAddress);
-  console.log('Settlement Data:');
-  console.log('Answer:', data.answer);
-  console.log('Reasoning:', data.reasoning);
-} catch (error) {
-  console.error('Error fetching settlement data:', error);
-}
-```
-
-### `getSettlementData(market: string | PublicKey, baseUrl?: string): Promise<SettlementData>`
-
-Alias for `fetchSettlementData`.
-
-### `fetchMarketAddresses(baseUrl?: string): Promise<string[]>`
-
-Fetches all market addresses from the proxy server.
-
-**Parameters:**
-- `baseUrl`: string (Optional) - Base URL for the proxy server
-
-**Returns:** Promise that resolves to an array of market address strings
-
-**Example:**
-```typescript
-try {
-  const addresses = await client.fetchMarketAddresses();
-  console.log(`Found ${addresses.length} markets on the proxy server:`);
-  addresses.forEach((address, index) => {
-    console.log(`${index + 1}. ${address}`);
-  });
-} catch (error) {
-  console.error('Error fetching market addresses:', error);
-}
-```
-
-## Types
-
-### Core Types
-
-```typescript
-// Market account data structure
-interface MarketType {
-  creator: Uint8Array;           // Market creator's public key
-  question: string;              // Market question/description
-  end_time: bigint;              // End time as Unix timestamp (seconds)
-  resolved: boolean;             // Whether the market has been resolved
-  winning_token_id: string;      // ID of the winning token ('yes' or 'no')
-  resolvable: boolean;           // Whether the market can be resolved
-  yes_token_mint: Uint8Array;    // YES token mint address
-  no_token_mint: Uint8Array;     // NO token mint address
-  collateral_token: Uint8Array;  // Collateral token mint address
-  // ... other fields
-}
-
-// Response from fetchMarkets()
-interface MarketsResponse {
-  count: number;                        // Number of markets found
-  data: Array<{
-    publicKey: string;                  // Market public key (base58)
-    account: MarketType;                // Market account data
-  }>;
-}
-
-// Global config account data
-interface GlobalConfigType {
-  admin: Uint8Array;                   // Admin public key
-  // ... other fields
-}
-
-// Settlement criteria returned from proxy
-interface SettlementCriteria {
-  resolvable: boolean;               // Whether market can be resolved
-  winning_token_id?: string;         // 'yes', 'no', or undefined
-  reasoning?: string;                // Explanation for the resolution
-  // ... potentially other fields depending on proxy
-}
-
-// Settlement data returned from proxy
-interface SettlementData {
-  answer: string;                     // 'YES', 'NO', or other resolution
-  reasoning: string;                  // Explanation for the resolution
-  // ... potentially other fields
-}
-
-// Market price data from V2 AMM
-interface MarketPriceV2Data {
-  yesPrice: number;                   // YES token price (0-1 range)
-  noPrice: number;                    // NO token price (0-1 range)
-  yesMultiplier: number;              // Return multiplier if YES wins
-  noMultiplier: number;               // Return multiplier if NO wins
-  marketReserves: number;             // Total collateral (human-readable)
-  yesTokenSupply: number;             // YES supply (human-readable)
-  noTokenSupply: number;              // NO supply (human-readable)
-  marketReservesRaw: string;          // Total collateral (raw base units)
-  yesTokenSupplyRaw: string;          // YES supply (raw base units)
-  noTokenSupplyRaw: string;           // NO supply (raw base units)
-}
-```
-
-### Function Parameters
-
-```typescript
-// Parameters for redeemPosition
-interface RedeemPositionOptions {
-  admin?: PublicKey;                // Override admin from global config
-  marketCreator?: PublicKey;        // Override market creator
-  creatorFeeTreasury?: PublicKey;   // Override creator fee treasury account
-}
-
-// Parameters for getSettlementCriteria retries
-interface SettlementCriteriaOptions {
-  retryDelayMs?: number;            // Delay between retries (default: 2000ms)
-  maxRetryTimeMs?: number;          // Maximum retry time (default: 15min)
-}
-```
+<Card title="Full type list" icon="code" href="https://github.com/proxima424/pnp-sdk-v2/blob/main/FUNCTIONS.md">
+  Every exported param/result/type is enumerated in the repo's `FUNCTIONS.md`.
+</Card>
